@@ -4,7 +4,6 @@ import { z } from 'zod'
 
 import { IssueBoard } from '@/features/issues/issue-board'
 import { IssueDetailDialog } from '@/features/issues/issue-detail-dialog'
-import { useIssues } from '@/features/issues/use-issues'
 import { useProject } from '@/features/projects/use-project'
 import { useWorkspaceRealtime } from '@/features/realtime/use-workspace-realtime'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -29,8 +28,6 @@ function ProjectIssuesPage() {
   const project = useProject(projectId)
   const setActiveWorkspaceId = useWorkspaceStore((state) => state.setActiveWorkspaceId)
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(issueFromSearch ?? null)
-
-  const issues = useIssues({ projectId })
 
   useWorkspaceRealtime(project.data?.workspaceId)
 
@@ -60,11 +57,7 @@ function ProjectIssuesPage() {
         )}
       </header>
 
-      <IssueBoard
-        issues={issues.data ?? []}
-        isLoading={issues.isLoading}
-        onSelectIssue={setSelectedIssueId}
-      />
+      <IssueBoard filters={{ projectId }} onSelectIssue={setSelectedIssueId} />
 
       {selectedIssueId && (
         <IssueDetailDialog

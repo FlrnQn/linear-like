@@ -2,20 +2,20 @@
 
 A Linear-inspired project management platform, built from scratch as a technical playground for modern full-stack TypeScript practices.
 
-> **Status: Phase 7 — Real-time.** Every workspace member sees issue/comment/project changes appear live via WebSocket, no refresh needed. A command palette, persistent sidebar, light/dark theme, and Motion-driven polish landed in Phase 6. Analytics, virtualization, and 3D accents are what's left.
+> **Status: Phase 8 — Analytics, performance & virtualization.** Cursor-paginated issue lists, a virtualized List view, a workspace dashboard (stat tiles + Recharts activity chart), and composite indexes verified against a 10k-issue seed. Real-time (WebSocket) landed in Phase 7; a command palette, persistent sidebar, light/dark theme, and Motion-driven polish in Phase 6. 3D accents and final polish are what's left.
 
 ## Stack
 
-| Layer      | Choices                                                                                                                                       |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend   | React 19, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Form, Zustand, dnd-kit, Radix UI, cmdk, Motion, Lucide, Tailwind CSS v4 |
-| Backend    | Node.js, TypeScript, Fastify 5, PostgreSQL, Redis (pub/sub), WebSocket (`@fastify/websocket`)                                                 |
-| Database   | Drizzle ORM (node-postgres driver), Drizzle Kit migrations, snake_case DB / camelCase JS via `casing: 'snake_case'`                           |
-| Auth       | Argon2 password hashing, JWT access tokens (`@fastify/jwt`), rotating opaque refresh tokens in an httpOnly cookie                             |
-| Validation | Zod schemas shared between web and api via `@lynx/types` (request bodies, forms, env parsing)                                                 |
-| Tooling    | pnpm workspaces, Turborepo, ESLint (flat config), Prettier, Docker Compose                                                                    |
+| Layer      | Choices                                                                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend   | React 19, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Form, TanStack Virtual, Zustand, dnd-kit, Radix UI, cmdk, Motion, Recharts, Lucide, Tailwind CSS v4 |
+| Backend    | Node.js, TypeScript, Fastify 5, PostgreSQL, Redis (pub/sub), WebSocket (`@fastify/websocket`)                                                                             |
+| Database   | Drizzle ORM (node-postgres driver), Drizzle Kit migrations, snake_case DB / camelCase JS via `casing: 'snake_case'`                                                       |
+| Auth       | Argon2 password hashing, JWT access tokens (`@fastify/jwt`), rotating opaque refresh tokens in an httpOnly cookie                                                         |
+| Validation | Zod schemas shared between web and api via `@lynx/types` (request bodies, forms, env parsing)                                                                             |
+| Tooling    | pnpm workspaces, Turborepo, ESLint (flat config), Prettier, Docker Compose                                                                                                |
 
-Additional libraries called for in the full spec (TanStack Virtual, shadcn/ui, Recharts, Three.js/R3F) are **not installed yet**. They're introduced in the phase where they're first actually used, so every dependency in `package.json` has a real caller.
+Additional libraries called for in the full spec (shadcn/ui, Three.js/R3F) are **not installed yet**. They're introduced in the phase where they're first actually used, so every dependency in `package.json` has a real caller. TanStack Virtual and Recharts joined in Phase 8.
 
 ## Architecture
 
@@ -27,7 +27,7 @@ lynx/
 │   │       ├── app/            # router/query-client setup, AppProviders (session bootstrap)
 │   │       ├── routes/         # TanStack Router routes (/, /login, /signup, /settings, /teams/$id, /projects/$id)
 │   │       ├── features/       # auth, workspaces, teams, projects, cycles, issues, labels, comments,
-│   │       │                   # activities, search, command-palette, realtime
+│   │       │                   # activities, search, command-palette, realtime, dashboard
 │   │       ├── components/     # cross-feature shared UI (e.g. ToastStack)
 │   │       ├── layouts/        # Sidebar (collapsible, animated, workspace nav)
 │   │       ├── hooks/          # (reserved) cross-cutting hooks
@@ -38,7 +38,7 @@ lynx/
 │   └── api/                    # Fastify backend
 │       └── src/
 │           ├── modules/        # health, auth, users, workspaces, teams, projects, cycles, issues,
-│           │                   # labels, comments, activities, search
+│           │                   # labels, comments, activities, search, dashboard
 │           ├── plugins/        # Fastify plugins (cors, sensible, cookie, jwt)
 │           ├── middleware/     # requireWorkspaceRole (RBAC check)
 │           ├── lib/            # HttpError hierarchy shared by routes and services
@@ -99,6 +99,8 @@ SEED_ISSUE_COUNT=2000 pnpm db:seed  # scale up, e.g. for virtualization testing 
 
 The seed is deterministic (`faker.seed(1234)`) and produces one workspace ("Lynx Demo") with 8 users, 3 teams (ENG/DES/PRO), labels, projects, 2 cycles per team, and issues distributed across statuses/priorities/assignees with comments and activity-log entries — inserted in batches of 500 rows so it scales to large counts without hitting PostgreSQL's parameter limit.
 
+Each issue gets its own `createdAt`, spread over the last 60 days (`faker.date.between`), rather than sharing the single `now()` timestamp a naive bulk insert would give every row. That distinction only shows up at realistic volume — at ~120 issues it's invisible, but at 10k it's the difference between a flat single-day spike and a chart that actually looks like 30 days of activity, which is what surfaced it while building the Phase 8 dashboard.
+
 ## Authentication & permissions
 
 - **Password hashing**: Argon2 (`argon2` package) — OWASP's current recommendation over bcrypt.
@@ -145,6 +147,22 @@ The seed is deterministic (`faker.seed(1234)`) and produces one workspace ("Lynx
 - **The frontend applies full server objects, not deltas.** `issue.updated` events carry the entire updated `Issue`; the client does `setQueryData` directly instead of re-deriving a patch, so it can never drift from what the server actually persisted (unlike the deliberately-partial optimistic patch used for local mutations).
 - **Self-originated events are silenced.** Every event carries `actorId`; the client compares it to the logged-in user before showing a toast, so your own edits don't narrate themselves back at you — only teammates' changes do.
 - **Reconnection is a flat 2s retry** while the hook is mounted, not exponential backoff — simple and sufficient at this scale; the effect re-runs (and reconnects with a fresh token) automatically whenever the access token rotates.
+
+## Analytics, performance & virtualization
+
+- **Cursor (keyset) pagination, not `OFFSET`, for `GET /issues`.** Seeded to 10k issues and measured with `EXPLAIN ANALYZE`: an `OFFSET 9000` page took ~30x longer than a composite-cursor equivalent, because Postgres has to walk and discard every skipped row instead of seeking straight in via the index. The cursor is `base64url({createdAt, id})`, and the tie-breaker on `id` is required — `createdAt` alone isn't unique enough to guarantee a stable sort order across pages when timestamps collide. See `apps/api/src/modules/issues/issues.service.ts`.
+- **Composite indexes match the pagination query shape exactly**: `issues_team_created_idx` / `issues_project_created_idx` on `(teamId, createdAt, id)` (`apps/api/src/db/schema/issues.ts`) — the index's column order mirrors the `WHERE scope = ? ORDER BY createdAt DESC, id DESC` clause so Postgres can satisfy the whole query from the index without a separate sort step.
+- **Cursor pagination is asymmetric with cycle numbering on purpose** — same reasoning as the Phase 5 `teams.issueCount` vs. plain `MAX(number)+1` split. Issue lists are read constantly and need to scale to thousands of rows; cycles per team are a handful, so they don't get the same treatment.
+- **Deliberately did _not_ denormalize `workspaceId` onto `issues`** for the dashboard's "recent issues across the workspace" query, even though it would let that query skip the `teams` join. Measured it first: at 10k issues the join costs ~6ms. Not worth a schema column and a write-path to keep in sync for a query that's already fast.
+- **The dashboard's day-bucketed activity chart is zero-filled server-side, not client-side** — `GROUP BY` only returns days that have at least one issue, which would silently draw a shorter, gap-toothed line for quiet periods. `apps/api/src/modules/dashboard/dashboard.service.ts` builds the full 30-day date list up front and left-joins counts onto it in JS, so every day in the window is always present, `count: 0` and all.
+- **That same query group-bys on a `to_char(...)`-formatted string, not `::date`.** Verified empirically: the Postgres session runs in UTC, but the API process's local timezone is whatever the host is set to. Letting `node-postgres` parse a `date` column hands back a JS `Date` reinterpreted at _local_ midnight — serializing it to ISO and re-displaying it in a browser in yet another timezone can silently shift the label to the wrong calendar day. Formatting to `'YYYY-MM-DD'` inside Postgres sidesteps the whole reinterpretation chain.
+- **The six dashboard stats queries run via `Promise.all`**, not sequentially — they're fully independent reads (total count, per-status breakdown, project count, team count, 30-day activity, recent issues), so there's no reason to pay for round-trip latency six times over.
+- **The issue List view is virtualized with `@tanstack/react-virtual`, backed by `useInfiniteQuery`.** Only the ~15 rows in the visible viewport (plus overscan) are ever mounted, regardless of whether the team has 50 or 50,000 issues; scrolling near the end triggers `fetchNextPage()` automatically. Status filtering moved from a client-side `.filter()` on the fetched page (which only ever saw one page's worth of data) to a real server-side query param, now that the list is genuinely paginated.
+- **Kanban intentionally does _not_ virtualize** — it fetches one capped page (`limit=500`, the API's max) instead. Combining `@tanstack/react-virtual`'s windowed rendering with `@dnd-kit`'s drag-and-drop (which needs every draggable's real DOM node for measurement) is a well-known hard combination; for a board view, "show the most recent 500 and say so" (a small notice appears above the board when a team exceeds it) is an honest, much simpler tradeoff than fighting that integration.
+- **A shared cache-mapping helper (`apps/web/src/features/issues/issues-cache.ts`) replaced the old flat-array assumption** in optimistic updates and the realtime WebSocket handler. Once the List view's cache became `InfiniteData<PaginatedIssues>` and Kanban's became a plain `PaginatedIssues`, both `useUpdateIssue`'s optimistic patch and `issue.updated` WebSocket events needed to reach into either shape — `mapCachedIssues()` handles both without either call site needing to know which one it's looking at.
+- **`IssueRow` and `KanbanCard` are wrapped in `React.memo`** — with hundreds of rows/cards on screen, a single issue's optimistic update (or a WebSocket patch) shouldn't force every sibling row to re-render.
+- **The area chart's color follows the dataviz method, not eyeballing**: a single time-series (issues created per day) is a one-hue "sequential/1-categorical" color job, which is explicitly out of scope for the categorical six-checks validator (`validate_palette.js` — it validates _identity_ palettes; a lone accent hue isn't one). It reuses the app's existing single accent (`var(--color-accent)`, already contrast-checked by virtue of being the app's button/focus color) at full opacity for the 2px line and ~10% opacity for the area wash, with solid (never dashed) hairline gridlines and no legend — a single series needs none.
+- **Measured, didn't assume, that the new `recharts`/`@tanstack/react-virtual` dependencies don't bloat the eagerly-loaded bundle.** Built both before and after this phase's changes (via `git stash`): the main entry chunk was 671.95 kB before and 672.13 kB after — a ~0.2 kB difference. Both new dependencies land inside route-level async chunks (`recharts` in the `/` route's chunk, `react-virtual` in the shared chunk behind the team/project issue views) thanks to TanStack Router's `autoCodeSplitting`, so they only download for someone who actually visits those routes. The pre-existing >500 kB main-chunk warning predates this phase and wasn't introduced or made worse by it.
 
 ## Prerequisites
 
@@ -211,6 +229,6 @@ pnpm db:studio      # browse the database in Drizzle Studio
 - [x] Phase 5 — Projects, cycles, Kanban (dnd-kit)
 - [x] Phase 6 — Command palette, keyboard shortcuts, search, animations
 - [x] Phase 7 — Real-time (WebSocket), optimistic updates
-- [ ] Phase 8 — Analytics, performance, virtualization
+- [x] Phase 8 — Analytics, performance, virtualization
 - [ ] Phase 9 — 3D accents, advanced animations, empty/loading states
 - [ ] Phase 10 — Tests, CI, docs, final cleanup

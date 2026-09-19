@@ -15,6 +15,13 @@
       "when": 1789836418174,
       "tag": "0001_steep_hairball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789846355471,
+      "tag": "0002_nasty_spot",
+      "breakpoints": true
     }
   ]
 }

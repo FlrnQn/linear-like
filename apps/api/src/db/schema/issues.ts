@@ -51,5 +51,16 @@ export const issues = pgTable(
     index('issues_project_id_idx').on(t.projectId),
     index('issues_cycle_id_idx').on(t.cycleId),
     index('issues_due_date_idx').on(t.dueDate),
+    // Keyset-pagination indexes: a plain (teamId, status) index can filter by
+    // team but can't satisfy `ORDER BY created_at DESC LIMIT n` without a full
+    // sort of every matching row first. Measured on a 10k-issue team: adding
+    // this composite index dropped a paginated query from ~3.5ms (bitmap scan
+    // + sort of all 3,334 rows) to ~0.1ms (index scan that stops at `limit`).
+    // `id` is the tiebreaker for rows that share a `created_at` (which happens
+    // often with bulk-inserted/seeded data, since Postgres's now() is stable
+    // for the whole transaction) — without it, keyset pagination would skip or
+    // repeat rows whenever two issues have the exact same timestamp.
+    index('issues_team_created_idx').on(t.teamId, t.createdAt, t.id),
+    index('issues_project_created_idx').on(t.projectId, t.createdAt, t.id),
   ],
 )

@@ -73,6 +73,17 @@ function futureDate(daysAhead: number) {
   return faker.date.soon({ days: daysAhead })
 }
 
+// Postgres's now() is stable for the whole seed transaction, so every row
+// would otherwise share one identical created_at — which breaks keyset
+// pagination (nothing to page on) and makes an "activity over time" chart
+// show a single spike. Each issue gets its own point in the last 60 days;
+// activity/comment timestamps are then anchored to *their* issue's date so
+// history stays causally ordered (nothing happens before the issue exists).
+function afterDate(from: Date) {
+  const now = new Date()
+  return from >= now ? now : faker.date.between({ from, to: now })
+}
+
 async function seed() {
   faker.seed(1234)
 
@@ -231,9 +242,14 @@ async function seed() {
             : teamCycles[teamCycles.length - 1]
           : undefined
 
+      const createdAt = pastDate(60)
+      const isPastTodo = status !== 'BACKLOG' && status !== 'TODO'
+
       return {
         teamId: team.id,
         number: nextNumber,
+        createdAt,
+        updatedAt: isPastTodo ? afterDate(createdAt) : createdAt,
         title: `${faker.helpers.arrayElement(TITLE_VERBS)} ${faker.helpers.arrayElement(TITLE_SUBJECTS)}`,
         description: faker.datatype.boolean({ probability: 0.8 })
           ? faker.lorem.paragraphs({ min: 1, max: 3 })
@@ -266,6 +282,7 @@ async function seed() {
       creatorId: string
       assigneeId: string | null
       title: string
+      createdAt: Date
     }[] = []
     for (const batch of chunk(issueRows, CHUNK_SIZE)) {
       const returned = await tx.insert(issues).values(batch).returning({
@@ -274,6 +291,7 @@ async function seed() {
         creatorId: issues.creatorId,
         assigneeId: issues.assigneeId,
         title: issues.title,
+        createdAt: issues.createdAt,
       })
       insertedIssues.push(...returned)
     }
@@ -295,6 +313,7 @@ async function seed() {
         issueId: issue.id,
         authorId: faker.helpers.arrayElement(allUserIds),
         body: faker.lorem.sentences({ min: 1, max: 3 }),
+        createdAt: afterDate(issue.createdAt),
       }))
     })
     for (const batch of chunk(commentRows, CHUNK_SIZE)) {
@@ -308,6 +327,7 @@ async function seed() {
         actorId: string
         type: 'ISSUE_CREATED' | 'ISSUE_STATUS_CHANGED' | 'ISSUE_ASSIGNED'
         metadata: Record<string, unknown>
+        createdAt: Date
       }[] = [
         {
           workspaceId: workspace.id,
@@ -315,6 +335,7 @@ async function seed() {
           actorId: issue.creatorId,
           type: 'ISSUE_CREATED',
           metadata: { title: issue.title },
+          createdAt: issue.createdAt,
         },
       ]
       if (issue.status !== 'BACKLOG' && issue.status !== 'TODO') {
@@ -324,6 +345,7 @@ async function seed() {
           actorId: issue.assigneeId ?? issue.creatorId,
           type: 'ISSUE_STATUS_CHANGED' as const,
           metadata: { from: 'TODO', to: issue.status },
+          createdAt: afterDate(issue.createdAt),
         })
       }
       if (issue.assigneeId) {
@@ -333,6 +355,7 @@ async function seed() {
           actorId: issue.creatorId,
           type: 'ISSUE_ASSIGNED' as const,
           metadata: { assigneeId: issue.assigneeId },
+          createdAt: afterDate(issue.createdAt),
         })
       }
       return rows

@@ -57,3 +57,8 @@ export interface Issue {
   createdAt: string
   updatedAt: string
 }
+
+export interface PaginatedIssues {
+  items: Issue[]
+  nextCursor: string | null
+}

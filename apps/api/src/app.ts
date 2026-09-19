@@ -6,6 +6,7 @@ import { activitiesRoutes } from './modules/activities/activities.routes'
 import { authRoutes } from './modules/auth/auth.routes'
 import { commentsRoutes } from './modules/comments/comments.routes'
 import { cyclesRoutes } from './modules/cycles/cycles.routes'
+import { dashboardRoutes } from './modules/dashboard/dashboard.routes'
 import { healthRoutes } from './modules/health/health.routes'
 import { issuesRoutes } from './modules/issues/issues.routes'
 import { labelsRoutes } from './modules/labels/labels.routes'
@@ -70,6 +71,7 @@ export async function buildApp() {
   await app.register(commentsRoutes)
   await app.register(activitiesRoutes)
   await app.register(searchRoutes)
+  await app.register(dashboardRoutes)
 
   return app
 }

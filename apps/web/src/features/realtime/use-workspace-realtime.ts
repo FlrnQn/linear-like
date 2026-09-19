@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 
 import { activitiesQueryKey } from '@/features/activities/use-activities'
 import { commentsQueryKey } from '@/features/comments/use-comments'
+import { mapCachedIssues } from '@/features/issues/issues-cache'
 import { issueQueryKey } from '@/features/issues/use-issue'
 import { projectsQueryKey } from '@/features/projects/use-projects'
 import { API_URL } from '@/lib/api'
@@ -48,11 +49,12 @@ export function useWorkspaceRealtime(workspaceId: string | undefined) {
             .getQueryCache()
             .findAll({ queryKey: ['issues'] })
             .forEach((query) => {
-              const data = query.state.data as Issue[] | undefined
-              if (data?.some((issue) => issue.id === event.issue.id)) {
+              if (query.state.data) {
                 queryClient.setQueryData(
                   query.queryKey,
-                  data.map((issue) => (issue.id === event.issue.id ? event.issue : issue)),
+                  mapCachedIssues(query.state.data, (issue) =>
+                    issue.id === event.issue.id ? event.issue : issue,
+                  ),
                 )
               }
             })

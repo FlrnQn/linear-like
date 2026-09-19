@@ -7,7 +7,6 @@ import { useCycles } from '@/features/cycles/use-cycles'
 import { CreateIssueForm } from '@/features/issues/create-issue-form'
 import { IssueBoard } from '@/features/issues/issue-board'
 import { IssueDetailDialog } from '@/features/issues/issue-detail-dialog'
-import { useIssues } from '@/features/issues/use-issues'
 import { useWorkspaceRealtime } from '@/features/realtime/use-workspace-realtime'
 import { useTeam } from '@/features/teams/use-team'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -36,8 +35,6 @@ function TeamIssuesPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showCreateCycle, setShowCreateCycle] = useState(false)
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(issueFromSearch ?? null)
-
-  const issues = useIssues({ teamId, cycleId: cycleFilter || undefined })
 
   useWorkspaceRealtime(team.data?.workspaceId)
 
@@ -109,8 +106,7 @@ function TeamIssuesPage() {
       </section>
 
       <IssueBoard
-        issues={issues.data ?? []}
-        isLoading={issues.isLoading}
+        filters={{ teamId, cycleId: cycleFilter || undefined }}
         onSelectIssue={setSelectedIssueId}
         extraFilters={
           <select

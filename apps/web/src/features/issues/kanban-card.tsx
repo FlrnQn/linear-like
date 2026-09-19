@@ -1,10 +1,11 @@
 import type { Issue } from '@lynx/types'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { memo } from 'react'
 
 import { PRIORITY_LABELS } from './status-priority'
 
-export function KanbanCard({ issue, onClick }: { issue: Issue; onClick: () => void }) {
+function KanbanCardImpl({ issue, onClick }: { issue: Issue; onClick: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue.id,
   })
@@ -39,3 +40,5 @@ export function KanbanCard({ issue, onClick }: { issue: Issue; onClick: () => vo
     </div>
   )
 }
+
+export const KanbanCard = memo(KanbanCardImpl)

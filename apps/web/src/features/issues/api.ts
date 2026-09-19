@@ -1,4 +1,10 @@
-import type { CreateIssueInput, Issue, IssueStatus, UpdateIssueInput } from '@lynx/types'
+import type {
+  CreateIssueInput,
+  Issue,
+  IssueStatus,
+  PaginatedIssues,
+  UpdateIssueInput,
+} from '@lynx/types'
 
 import { apiFetch } from '@/lib/api-client'
 
@@ -8,6 +14,8 @@ export interface ListIssuesParams {
   status?: IssueStatus
   assigneeId?: string
   cycleId?: string
+  cursor?: string
+  limit?: number
 }
 
 export function listIssues(params: ListIssuesParams) {
@@ -17,7 +25,9 @@ export function listIssues(params: ListIssuesParams) {
   if (params.status) search.set('status', params.status)
   if (params.assigneeId) search.set('assigneeId', params.assigneeId)
   if (params.cycleId) search.set('cycleId', params.cycleId)
-  return apiFetch<Issue[]>(`/issues?${search.toString()}`)
+  if (params.cursor) search.set('cursor', params.cursor)
+  if (params.limit) search.set('limit', String(params.limit))
+  return apiFetch<PaginatedIssues>(`/issues?${search.toString()}`)
 }
 
 export function getIssue(id: string) {

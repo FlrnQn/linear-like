@@ -1,5 +1,5 @@
-import type { CreateIssueInput, UpdateIssueInput } from '@lynx/types'
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import type { CreateIssueInput, PaginatedIssues, UpdateIssueInput } from '@lynx/types'
+import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm'
 
 import { db } from '../../db/client'
 import { activities, cycles, issueLabels, issues, projects, teams } from '../../db/schema'
@@ -48,32 +48,92 @@ export async function getIssueById(id: string) {
   return row ? toPublicIssue(row) : null
 }
 
+export async function listRecentIssuesForWorkspace(workspaceId: string, limit: number) {
+  const workspaceTeams = await db.query.teams.findMany({
+    where: eq(teams.workspaceId, workspaceId),
+    columns: { id: true },
+  })
+  const teamIds = workspaceTeams.map((team) => team.id)
+  if (teamIds.length === 0) return []
+
+  const rows = await db.query.issues.findMany({
+    where: inArray(issues.teamId, teamIds),
+    with: issueRelations,
+    orderBy: [desc(issues.createdAt), desc(issues.id)],
+    limit,
+  })
+  return rows.map(toPublicIssue)
+}
+
 interface IssueListFilters {
   status?: string
   assigneeId?: string
   cycleId?: string
+  cursor?: string
   limit: number
-  offset: number
+}
+
+interface IssueCursor {
+  createdAt: Date
+  id: string
+}
+
+// Opaque, URL-safe cursor over (createdAt, id) — see the index comment in
+// db/schema/issues.ts for why both fields are needed, not createdAt alone.
+function encodeCursor(cursor: IssueCursor): string {
+  return Buffer.from(
+    JSON.stringify({ createdAt: cursor.createdAt.toISOString(), id: cursor.id }),
+  ).toString('base64url')
+}
+
+function decodeCursor(raw: string): IssueCursor | null {
+  try {
+    const parsed = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8')) as {
+      createdAt: string
+      id: string
+    }
+    return { createdAt: new Date(parsed.createdAt), id: parsed.id }
+  } catch {
+    return null
+  }
 }
 
 async function listIssuesWhere(
   scopeCondition: NonNullable<Parameters<typeof and>[0]>,
   filters: IssueListFilters,
-) {
+): Promise<PaginatedIssues> {
   const conditions = [scopeCondition]
   if (filters.status) conditions.push(eq(issues.status, filters.status as never))
   if (filters.assigneeId) conditions.push(eq(issues.assigneeId, filters.assigneeId))
   if (filters.cycleId) conditions.push(eq(issues.cycleId, filters.cycleId))
 
+  const cursor = filters.cursor ? decodeCursor(filters.cursor) : null
+  if (cursor) {
+    const cursorCondition = or(
+      lt(issues.createdAt, cursor.createdAt),
+      and(eq(issues.createdAt, cursor.createdAt), lt(issues.id, cursor.id)),
+    )
+    if (cursorCondition) conditions.push(cursorCondition)
+  }
+
+  // Fetch one extra row to know whether a next page exists without a
+  // separate COUNT(*) query.
   const rows = await db.query.issues.findMany({
     where: and(...conditions),
     with: issueRelations,
-    orderBy: [desc(issues.createdAt)],
-    limit: filters.limit,
-    offset: filters.offset,
+    orderBy: [desc(issues.createdAt), desc(issues.id)],
+    limit: filters.limit + 1,
   })
 
-  return rows.map(toPublicIssue)
+  const hasMore = rows.length > filters.limit
+  const pageRows = hasMore ? rows.slice(0, filters.limit) : rows
+  const lastRow = pageRows[pageRows.length - 1]
+
+  return {
+    items: pageRows.map(toPublicIssue),
+    nextCursor:
+      hasMore && lastRow ? encodeCursor({ createdAt: lastRow.createdAt, id: lastRow.id }) : null,
+  }
 }
 
 export async function listIssuesForTeam(teamId: string, filters: IssueListFilters) {

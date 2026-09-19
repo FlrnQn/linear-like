@@ -1,16 +1,15 @@
 import type { Issue } from '@lynx/types'
 import { cn } from '@lynx/shared'
 import { motion } from 'motion/react'
+import { memo } from 'react'
 
 import { PRIORITY_LABELS, STATUS_DOT_COLORS } from './status-priority'
 
-export function IssueRow({ issue, onClick }: { issue: Issue; onClick: () => void }) {
+function IssueRowImpl({ issue, onClick }: { issue: Issue; onClick: () => void }) {
   return (
     <motion.button
-      layout
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       type="button"
       onClick={onClick}
@@ -46,3 +45,5 @@ export function IssueRow({ issue, onClick }: { issue: Issue; onClick: () => void
     </motion.button>
   )
 }
+
+export const IssueRow = memo(IssueRowImpl)

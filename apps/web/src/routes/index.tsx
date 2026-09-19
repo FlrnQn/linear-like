@@ -3,6 +3,8 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 import { useLogout } from '@/features/auth/use-logout'
+import { DashboardPanel } from '@/features/dashboard/dashboard-panel'
+import { useWorkspaceStats } from '@/features/dashboard/use-workspace-stats'
 import { CreateProjectForm } from '@/features/projects/create-project-form'
 import { useProjects } from '@/features/projects/use-projects'
 import { useWorkspaceRealtime } from '@/features/realtime/use-workspace-realtime'
@@ -38,11 +40,12 @@ function HomePage() {
 
   const teams = useTeams(activeWorkspaceId)
   const projects = useProjects(activeWorkspaceId)
+  const stats = useWorkspaceStats(activeWorkspaceId)
 
   useWorkspaceRealtime(activeWorkspaceId)
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-6 py-16">
+    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-16">
       <header className="flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-xs font-medium uppercase tracking-[0.3em]">
@@ -88,6 +91,8 @@ function HomePage() {
               </button>
             ))}
           </div>
+
+          {stats.data && <DashboardPanel stats={stats.data} />}
 
           <div className="border-border bg-surface rounded-xl border p-6">
             <h2 className="mb-4 text-sm font-medium">Teams</h2>

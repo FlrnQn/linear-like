@@ -5,6 +5,7 @@ import { activitiesQueryKey } from '@/features/activities/use-activities'
 import { useToastStore } from '@/stores/toast-store'
 
 import { updateIssue } from './api'
+import { mapCachedIssues } from './issues-cache'
 import { issueQueryKey } from './use-issue'
 
 interface UpdateIssueVars {
@@ -14,7 +15,7 @@ interface UpdateIssueVars {
 
 interface UpdateIssueContext {
   previousIssue: Issue | undefined
-  previousLists: [readonly unknown[], Issue[] | undefined][]
+  previousLists: [readonly unknown[], unknown][]
 }
 
 // Only fields that map 1:1 onto the Issue shape are applied optimistically.
@@ -46,17 +47,19 @@ export function useUpdateIssue() {
         queryClient.setQueryData<Issue>(issueQueryKey(issueId), patchIssue(previousIssue, input))
       }
 
-      const previousLists: [readonly unknown[], Issue[] | undefined][] = []
+      const previousLists: [readonly unknown[], unknown][] = []
       queryClient
         .getQueryCache()
         .findAll({ queryKey: ['issues'] })
         .forEach((query) => {
-          const data = query.state.data as Issue[] | undefined
+          const data = query.state.data
           previousLists.push([query.queryKey, data])
           if (data) {
-            queryClient.setQueryData<Issue[]>(
+            queryClient.setQueryData(
               query.queryKey,
-              data.map((issue) => (issue.id === issueId ? patchIssue(issue, input) : issue)),
+              mapCachedIssues(data, (issue) =>
+                issue.id === issueId ? patchIssue(issue, input) : issue,
+              ),
             )
           }
         })

@@ -1,35 +1,69 @@
-import type { Issue } from '@lynx/types'
+import type { IssueStatus } from '@lynx/types'
 import { ISSUE_STATUSES } from '@lynx/types'
 import { cn } from '@lynx/shared'
-import { AnimatePresence } from 'motion/react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
+import type { ListIssuesParams } from './api'
 import { IssueRow } from './issue-row'
 import { KanbanBoard } from './kanban-board'
 import { STATUS_LABELS } from './status-priority'
+import { useInfiniteIssues, useIssues } from './use-issues'
 
-type StatusFilter = (typeof ISSUE_STATUSES)[number] | 'ALL'
+type StatusFilter = IssueStatus | 'ALL'
 type ViewMode = 'list' | 'kanban'
 
+// Fixed row height lets the virtualizer skip measuring the DOM — every IssueRow
+// renders at the same height (py-2 + text-sm + border), so an estimate is exact.
+const ROW_HEIGHT_PX = 45
+const LIST_VIEWPORT_HEIGHT_PX = 560
+
 export function IssueBoard({
-  issues,
-  isLoading,
+  filters,
   onSelectIssue,
   extraFilters,
 }: {
-  issues: Issue[]
-  isLoading: boolean
+  filters: ListIssuesParams
   onSelectIssue: (issueId: string) => void
   extraFilters?: ReactNode
 }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [view, setView] = useState<ViewMode>('list')
 
-  const filteredIssues =
-    view === 'list' && statusFilter !== 'ALL'
-      ? issues.filter((issue) => issue.status === statusFilter)
-      : issues
+  const listFilters = useMemo(
+    () => ({ ...filters, status: statusFilter === 'ALL' ? undefined : statusFilter }),
+    [filters, statusFilter],
+  )
+
+  const infiniteIssues = useInfiniteIssues(listFilters, { enabled: view === 'list' })
+  const kanbanIssues = useIssues(filters, { enabled: view === 'kanban' })
+
+  const listRows = useMemo(
+    () => infiniteIssues.data?.pages.flatMap((page) => page.items) ?? [],
+    [infiniteIssues.data],
+  )
+
+  const parentRef = useRef<HTMLDivElement>(null)
+  const hasNextPage = infiniteIssues.hasNextPage
+  const isFetchingNextPage = infiniteIssues.isFetchingNextPage
+  const fetchNextPage = infiniteIssues.fetchNextPage
+
+  const rowVirtualizer = useVirtualizer({
+    count: hasNextPage ? listRows.length + 1 : listRows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ROW_HEIGHT_PX,
+    overscan: 8,
+  })
+  const virtualItems = rowVirtualizer.getVirtualItems()
+
+  useEffect(() => {
+    const lastItem = virtualItems[virtualItems.length - 1]
+    if (!lastItem) return
+    if (lastItem.index >= listRows.length - 1 && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage()
+    }
+  }, [virtualItems, listRows.length, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   return (
     <div className="flex flex-col gap-4">
@@ -89,23 +123,51 @@ export function IssueBoard({
       </div>
 
       {view === 'list' ? (
-        <div className="flex flex-col gap-2">
-          {isLoading ? (
-            <p className="text-muted-foreground text-sm">Loading issues…</p>
-          ) : filteredIssues.length > 0 ? (
-            <AnimatePresence initial={false}>
-              {filteredIssues.map((issue) => (
-                <IssueRow key={issue.id} issue={issue} onClick={() => onSelectIssue(issue.id)} />
-              ))}
-            </AnimatePresence>
-          ) : (
-            <p className="text-muted-foreground text-sm">No issues yet.</p>
-          )}
-        </div>
-      ) : isLoading ? (
+        infiniteIssues.isLoading ? (
+          <p className="text-muted-foreground text-sm">Loading issues…</p>
+        ) : listRows.length > 0 ? (
+          <div
+            ref={parentRef}
+            className="overflow-y-auto"
+            style={{ height: LIST_VIEWPORT_HEIGHT_PX }}
+          >
+            <div className="relative w-full" style={{ height: rowVirtualizer.getTotalSize() }}>
+              {virtualItems.map((virtualRow) => {
+                const issue = listRows[virtualRow.index]
+                return (
+                  <div
+                    key={virtualRow.key}
+                    className="absolute left-0 top-0 w-full py-1"
+                    style={{
+                      height: virtualRow.size,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    {issue ? (
+                      <IssueRow issue={issue} onClick={() => onSelectIssue(issue.id)} />
+                    ) : (
+                      <p className="text-muted-foreground px-3 py-2 text-sm">Loading more…</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">No issues yet.</p>
+        )
+      ) : kanbanIssues.isLoading ? (
         <p className="text-muted-foreground text-sm">Loading issues…</p>
       ) : (
-        <KanbanBoard issues={issues} onSelectIssue={onSelectIssue} />
+        <>
+          {kanbanIssues.data?.nextCursor && (
+            <p className="text-muted-foreground text-xs">
+              Showing the first {kanbanIssues.data.items.length} issues — narrow with a cycle or
+              team filter to see the rest.
+            </p>
+          )}
+          <KanbanBoard issues={kanbanIssues.data?.items ?? []} onSelectIssue={onSelectIssue} />
+        </>
       )}
     </div>
   )
