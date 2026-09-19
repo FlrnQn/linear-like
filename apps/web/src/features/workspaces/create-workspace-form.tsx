@@ -1,0 +1,108 @@
+import { createWorkspaceSchema } from '@lynx/types'
+import { useForm } from '@tanstack/react-form'
+import { useRef } from 'react'
+
+import { ApiError } from '@/lib/api-client'
+
+import { useCreateWorkspace } from './use-create-workspace'
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
+  const createWorkspace = useCreateWorkspace()
+  const slugTouched = useRef(false)
+
+  const form = useForm({
+    defaultValues: { name: '', slug: '' },
+    validators: { onChange: createWorkspaceSchema },
+    onSubmit: async ({ value }) => {
+      await createWorkspace.mutateAsync(value, { onSuccess })
+    },
+  })
+
+  return (
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(e) => {
+        e.preventDefault()
+        void form.handleSubmit()
+      }}
+    >
+      <form.Field name="name">
+        {(field) => (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={field.name} className="text-sm font-medium">
+              Workspace name
+            </label>
+            <input
+              id={field.name}
+              type="text"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => {
+                field.handleChange(e.target.value)
+                if (!slugTouched.current) {
+                  form.setFieldValue('slug', slugify(e.target.value))
+                }
+              }}
+              className="border-border bg-background focus:border-accent rounded-lg border px-3 py-2 text-sm outline-none"
+            />
+            {field.state.meta.errors.length > 0 && (
+              <p className="text-xs text-red-500">{String(field.state.meta.errors[0]?.message)}</p>
+            )}
+          </div>
+        )}
+      </form.Field>
+
+      <form.Field name="slug">
+        {(field) => (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={field.name} className="text-sm font-medium">
+              Slug
+            </label>
+            <input
+              id={field.name}
+              type="text"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => {
+                slugTouched.current = true
+                field.handleChange(e.target.value)
+              }}
+              className="border-border bg-background focus:border-accent rounded-lg border px-3 py-2 text-sm outline-none"
+            />
+            {field.state.meta.errors.length > 0 && (
+              <p className="text-xs text-red-500">{String(field.state.meta.errors[0]?.message)}</p>
+            )}
+          </div>
+        )}
+      </form.Field>
+
+      {createWorkspace.isError && (
+        <p className="text-sm text-red-500">
+          {createWorkspace.error instanceof ApiError
+            ? createWorkspace.error.message
+            : 'Something went wrong'}
+        </p>
+      )}
+
+      <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
+        {([canSubmit, isSubmitting]) => (
+          <button
+            type="submit"
+            disabled={!canSubmit || isSubmitting}
+            className="bg-accent text-accent-foreground mt-2 rounded-lg px-3 py-2 text-sm font-medium transition-opacity disabled:opacity-50"
+          >
+            {isSubmitting ? 'Creating…' : 'Create workspace'}
+          </button>
+        )}
+      </form.Subscribe>
+    </form>
+  )
+}

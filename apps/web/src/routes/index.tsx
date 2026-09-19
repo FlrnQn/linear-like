@@ -1,73 +1,107 @@
 import { cn } from '@lynx/shared'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useState } from 'react'
 
-import { useHealthCheck } from '@/hooks/use-health-check'
+import { useLogout } from '@/features/auth/use-logout'
+import { CreateTeamForm } from '@/features/teams/create-team-form'
+import { useTeams } from '@/features/teams/use-teams'
+import { CreateWorkspaceForm } from '@/features/workspaces/create-workspace-form'
+import { useWorkspaces } from '@/features/workspaces/use-workspaces'
+import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/')({
+  beforeLoad: ({ context, location }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({ to: '/login', search: { redirect: location.href } })
+    }
+  },
   component: HomePage,
 })
 
 function HomePage() {
-  const health = useHealthCheck()
+  const user = useAuthStore((state) => state.user)
+  const workspaces = useWorkspaces()
+  const logout = useLogout()
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | undefined>()
+
+  const activeWorkspaceId = selectedWorkspaceId ?? workspaces.data?.[0]?.id
+  const teams = useTeams(activeWorkspaceId)
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-10 px-6">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <span className="text-muted-foreground text-xs font-medium uppercase tracking-[0.3em]">
-          Phase 1 — Foundations
-        </span>
-        <h1 className="text-5xl font-semibold tracking-tight">LYNX</h1>
-        <p className="text-muted-foreground max-w-sm text-sm">
-          Monorepo scaffold is live. Business features arrive in the next phases.
-        </p>
-      </div>
-
-      <div className="border-border bg-surface w-full max-w-sm rounded-xl border p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-medium">System status</h2>
-          <button
-            type="button"
-            onClick={() => void health.refetch()}
-            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
-          >
-            Refresh
-          </button>
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-6 py-16">
+      <header className="flex items-center justify-between">
+        <div>
+          <p className="text-muted-foreground text-xs font-medium uppercase tracking-[0.3em]">
+            LYNX
+          </p>
+          <h1 className="text-2xl font-semibold">Welcome back, {user?.name.split(' ')[0]}</h1>
         </div>
+        <button
+          type="button"
+          onClick={() => logout.mutate()}
+          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+        >
+          Sign out
+        </button>
+      </header>
 
-        {health.status === 'loading' || health.status === 'idle' ? (
-          <p className="text-muted-foreground text-sm">Checking services…</p>
-        ) : health.status === 'error' ? (
-          <StatusRow label="API" state="error" detail={health.error} />
-        ) : (
-          <div className="flex flex-col gap-3">
-            <StatusRow label="API" state="ok" />
-            <StatusRow label="PostgreSQL" state={health.data.services.postgres} />
-            <StatusRow label="Redis" state={health.data.services.redis} />
+      {workspaces.isLoading ? (
+        <p className="text-muted-foreground text-sm">Loading workspaces…</p>
+      ) : workspaces.data && workspaces.data.length === 0 ? (
+        <section className="border-border bg-surface rounded-xl border p-6">
+          <h2 className="mb-1 text-sm font-medium">Create your first workspace</h2>
+          <p className="text-muted-foreground mb-4 text-sm">
+            A workspace groups your teams, projects, and issues.
+          </p>
+          <CreateWorkspaceForm onSuccess={() => undefined} />
+        </section>
+      ) : (
+        <section className="flex flex-col gap-4">
+          <div className="flex flex-wrap gap-2">
+            {workspaces.data?.map((workspace) => (
+              <button
+                key={workspace.id}
+                type="button"
+                onClick={() => setSelectedWorkspaceId(workspace.id)}
+                className={cn(
+                  'rounded-lg border px-3 py-1.5 text-sm transition-colors',
+                  workspace.id === activeWorkspaceId
+                    ? 'border-accent text-foreground'
+                    : 'border-border text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {workspace.name}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
-    </main>
-  )
-}
 
-function StatusRow({
-  label,
-  state,
-  detail,
-}: {
-  label: string
-  state: 'ok' | 'error'
-  detail?: string
-}) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span>{label}</span>
-      <span className="flex items-center gap-2">
-        {detail && <span className="text-muted-foreground text-xs">{detail}</span>}
-        <span
-          className={cn('h-2 w-2 rounded-full', state === 'ok' ? 'bg-emerald-500' : 'bg-red-500')}
-        />
-      </span>
-    </div>
+          <div className="border-border bg-surface rounded-xl border p-6">
+            <h2 className="mb-4 text-sm font-medium">Teams</h2>
+
+            {teams.isLoading ? (
+              <p className="text-muted-foreground mb-4 text-sm">Loading teams…</p>
+            ) : teams.data && teams.data.length > 0 ? (
+              <ul className="mb-4 flex flex-col gap-2">
+                {teams.data.map((team) => (
+                  <li
+                    key={team.id}
+                    className="border-border flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                  >
+                    <span>{team.name}</span>
+                    <span className="text-muted-foreground text-xs">{team.key}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground mb-4 text-sm">No teams yet.</p>
+            )}
+
+            {activeWorkspaceId && (
+              <CreateTeamForm workspaceId={activeWorkspaceId} onSuccess={() => undefined} />
+            )}
+          </div>
+        </section>
+      )}
+    </main>
   )
 }

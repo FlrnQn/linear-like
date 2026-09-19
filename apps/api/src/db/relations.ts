@@ -7,6 +7,7 @@ import { issueLabels } from './schema/issue-labels'
 import { issues } from './schema/issues'
 import { labels } from './schema/labels'
 import { projects } from './schema/projects'
+import { sessions } from './schema/sessions'
 import { teamMembers } from './schema/team-members'
 import { teams } from './schema/teams'
 import { users } from './schema/users'
@@ -20,6 +21,11 @@ export const usersRelations = relations(users, ({ many }) => ({
   assignedIssues: many(issues, { relationName: 'assignee' }),
   comments: many(comments),
   activities: many(activities),
+  sessions: many(sessions),
+}))
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
 }))
 
 export const workspacesRelations = relations(workspaces, ({ many }) => ({

@@ -10,6 +10,9 @@
     "lint": "eslint .",
     "clean": "rm -rf dist .turbo"
   },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
   "devDependencies": {
     "@lynx/config": "workspace:*",
     "typescript": "^5.7.3"

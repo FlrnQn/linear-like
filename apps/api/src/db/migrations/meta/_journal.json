@@ -8,6 +8,13 @@
       "when": 1789831725876,
       "tag": "0000_tearful_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789836418174,
+      "tag": "0001_steep_hairball",
+      "breakpoints": true
     }
   ]
 }
