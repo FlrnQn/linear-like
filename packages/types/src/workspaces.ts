@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { WorkspaceRole } from './enums'
+
 export const createWorkspaceSchema = z.object({
   name: z.string().trim().min(1).max(255),
   slug: z
@@ -19,4 +21,12 @@ export interface Workspace {
   logoUrl: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface WorkspaceMember {
+  userId: string
+  name: string
+  email: string
+  avatarUrl: string | null
+  role: WorkspaceRole
 }

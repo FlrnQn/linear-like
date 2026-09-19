@@ -2,8 +2,9 @@ import { createTeamSchema } from '@lynx/types'
 import type { FastifyPluginAsync } from 'fastify'
 
 import { requireWorkspaceRole } from '../../middleware/require-workspace-role'
-import { listTeamsQuerySchema } from './teams.schemas'
-import { createTeam, listTeamsForWorkspace } from './teams.service'
+import { NotFoundError } from '../../lib/errors'
+import { listTeamsQuerySchema, teamIdParamsSchema } from './teams.schemas'
+import { createTeam, getTeamById, listTeamsForWorkspace } from './teams.service'
 
 export const teamsRoutes: FastifyPluginAsync = async (app) => {
   app.post('/teams', { preHandler: [app.authenticate] }, async (request, reply) => {
@@ -20,5 +21,20 @@ export const teamsRoutes: FastifyPluginAsync = async (app) => {
 
     await requireWorkspaceRole(request.user.sub, workspaceId, ['OWNER', 'ADMIN', 'MEMBER', 'GUEST'])
     return listTeamsForWorkspace(workspaceId)
+  })
+
+  app.get('/teams/:id', { preHandler: [app.authenticate] }, async (request) => {
+    const { id } = teamIdParamsSchema.parse(request.params)
+
+    const team = await getTeamById(id)
+    if (!team) throw new NotFoundError('Team not found')
+
+    await requireWorkspaceRole(request.user.sub, team.workspaceId, [
+      'OWNER',
+      'ADMIN',
+      'MEMBER',
+      'GUEST',
+    ])
+    return team
   })
 }

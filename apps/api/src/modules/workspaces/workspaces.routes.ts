@@ -2,11 +2,13 @@ import { createWorkspaceSchema } from '@lynx/types'
 import type { FastifyPluginAsync } from 'fastify'
 
 import { ConflictError, NotFoundError } from '../../lib/errors'
+import { requireWorkspaceRole } from '../../middleware/require-workspace-role'
 import { workspaceIdParamsSchema } from './workspaces.schemas'
 import {
   createWorkspaceForUser,
   findWorkspaceBySlug,
   getWorkspaceForUser,
+  listMembersForWorkspace,
   listWorkspacesForUser,
 } from './workspaces.service'
 
@@ -32,5 +34,12 @@ export const workspacesRoutes: FastifyPluginAsync = async (app) => {
     if (!workspace) throw new NotFoundError('Workspace not found')
 
     return workspace
+  })
+
+  app.get('/workspaces/:id/members', { preHandler: [app.authenticate] }, async (request) => {
+    const { id } = workspaceIdParamsSchema.parse(request.params)
+
+    await requireWorkspaceRole(request.user.sub, id, ['OWNER', 'ADMIN', 'MEMBER', 'GUEST'])
+    return listMembersForWorkspace(id)
   })
 }

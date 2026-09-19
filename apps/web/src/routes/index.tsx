@@ -1,5 +1,5 @@
 import { cn } from '@lynx/shared'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 
 import { useLogout } from '@/features/auth/use-logout'
@@ -83,12 +83,15 @@ function HomePage() {
             ) : teams.data && teams.data.length > 0 ? (
               <ul className="mb-4 flex flex-col gap-2">
                 {teams.data.map((team) => (
-                  <li
-                    key={team.id}
-                    className="border-border flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
-                  >
-                    <span>{team.name}</span>
-                    <span className="text-muted-foreground text-xs">{team.key}</span>
+                  <li key={team.id}>
+                    <Link
+                      to="/teams/$teamId"
+                      params={{ teamId: team.id }}
+                      className="border-border hover:border-accent flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors"
+                    >
+                      <span>{team.name}</span>
+                      <span className="text-muted-foreground text-xs">{team.key}</span>
+                    </Link>
                   </li>
                 ))}
               </ul>

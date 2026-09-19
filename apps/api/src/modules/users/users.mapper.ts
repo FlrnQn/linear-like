@@ -1,3 +1,5 @@
+import type { PublicUser } from '@lynx/types'
+
 interface UserRow {
   id: string
   name: string
@@ -6,12 +8,12 @@ interface UserRow {
   createdAt: Date
 }
 
-export function toPublicUser(user: UserRow) {
+export function toPublicUser(user: UserRow): PublicUser {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     avatarUrl: user.avatarUrl,
-    createdAt: user.createdAt,
+    createdAt: user.createdAt.toISOString(),
   }
 }

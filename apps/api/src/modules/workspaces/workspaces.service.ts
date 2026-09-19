@@ -38,3 +38,18 @@ export async function getWorkspaceForUser(userId: string, workspaceId: string) {
   })
   return membership?.workspace ?? null
 }
+
+export async function listMembersForWorkspace(workspaceId: string) {
+  const memberships = await db.query.workspaceMembers.findMany({
+    where: eq(workspaceMembers.workspaceId, workspaceId),
+    with: { user: true },
+  })
+
+  return memberships.map((membership) => ({
+    userId: membership.user.id,
+    name: membership.user.name,
+    email: membership.user.email,
+    avatarUrl: membership.user.avatarUrl,
+    role: membership.role,
+  }))
+}

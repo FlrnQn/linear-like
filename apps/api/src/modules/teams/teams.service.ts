@@ -25,3 +25,7 @@ export async function createTeam(creatorId: string, input: CreateTeamInput) {
 export async function listTeamsForWorkspace(workspaceId: string) {
   return db.query.teams.findMany({ where: eq(teams.workspaceId, workspaceId) })
 }
+
+export async function getTeamById(id: string) {
+  return db.query.teams.findFirst({ where: eq(teams.id, id) })
+}
