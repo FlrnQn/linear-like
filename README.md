@@ -2,7 +2,7 @@
 
 A Linear-inspired project management platform, built from scratch as a technical playground for modern full-stack TypeScript practices.
 
-> **Status: Phase 9 — 3D accents, advanced animations, empty & loading states.** A minimal React Three Fiber "LYNX object" now accents the login page, the boot screen, and the primary empty state — lightweight, lazy-loaded, disableable, and `prefers-reduced-motion`-aware. Status/priority pickers are animated Radix dropdowns, page transitions and stat-tile count-ups round out the animation pass, and every ad hoc "Loading…"/"No X yet" string is now a real skeleton or empty-state component. Analytics, virtualization, and real-time landed in Phases 7–8.
+> **Status: Phase 10 — Tests, E2E, documentation, final cleanup.** Vitest covers backend regression tests (Fastify `.inject()`, a dedicated `lynx_test` database) and a handful of frontend unit tests; Playwright drives the real browser through login, signup, logout, create/edit issue, status change, assignment, and permission checks. That real end-to-end coverage — the first time this app has run in an actual browser rather than been curl-tested — surfaced and fixed five genuine bugs (see below). CI is intentionally out of scope for now. 3D accents and animation polish landed in Phase 9; analytics, virtualization, and real-time in Phases 7–8.
 
 ## Stack
 
@@ -33,19 +33,22 @@ lynx/
 │   │       ├── hooks/          # usePrefersReducedMotion
 │   │       ├── lib/            # api-client (auth header + refresh-on-401), API base URL
 │   │       ├── stores/         # Zustand: auth, ui (theme/sidebar/palette), workspace, toast
-│   │       └── styles/         # Tailwind entry + design tokens
+│   │       ├── styles/         # Tailwind entry + design tokens
+│   │       └── test/           # Vitest setup (jest-dom matchers, Testing Library cleanup)
+│   │   └── e2e/                 # Playwright specs (auth, issues, projects) + global-setup.ts
 │   │
 │   └── api/                    # Fastify backend
-│       └── src/
-│           ├── modules/        # health, auth, users, workspaces, teams, projects, cycles, issues,
-│           │                   # labels, comments, activities, search, dashboard
-│           ├── plugins/        # Fastify plugins (cors, sensible, cookie, jwt)
-│           ├── middleware/     # requireWorkspaceRole (RBAC check)
-│           ├── lib/            # HttpError hierarchy shared by routes and services
-│           ├── db/             # Postgres pool, Redis client, Drizzle schema/relations/migrations/seed
-│           ├── websocket/      # WS route + Redis pub/sub fan-out (events.ts, websocket.plugin.ts)
-│           ├── app.ts          # buildApp(): assembles the Fastify instance (testable)
-│           └── server.ts       # boots buildApp() and starts listening
+│       ├── src/
+│       │   ├── modules/        # health, auth, users, workspaces, teams, projects, cycles, issues,
+│       │   │                   # labels, comments, activities, search, dashboard
+│       │   ├── plugins/        # Fastify plugins (cors, sensible, cookie, jwt)
+│       │   ├── middleware/     # requireWorkspaceRole (RBAC check)
+│       │   ├── lib/            # HttpError hierarchy shared by routes and services
+│       │   ├── db/             # Postgres pool, Redis client, Drizzle schema/relations/migrations/seed
+│       │   ├── websocket/      # WS route + Redis pub/sub fan-out (events.ts, websocket.plugin.ts)
+│       │   ├── app.ts          # buildApp(): assembles the Fastify instance (testable)
+│       │   └── server.ts       # boots buildApp() and starts listening
+│       └── test/               # Vitest global-setup (migrate + truncate lynx_test) + shared test helpers
 │
 ├── packages/
 │   ├── config/                 # shared tsconfig bases (base/react/node)
@@ -178,6 +181,24 @@ Each issue gets its own `createdAt`, spread over the last 60 days (`faker.date.b
 - **Dashboard stat tiles count up on mount and on value change**, via Motion's imperative `animate()` driving a plain `useState` (not a `MotionValue` rendered as text — Motion values bind to style/props, not arbitrary JSX children) — a real, scoped answer to the spec's "transitions des statistiques," not a generic fade.
 - **The sidebar's collapse toggle gets a Radix `Tooltip`** (same Motion-animated pattern as Select), the one icon-only control in the app that previously had no visible affordance beyond its `aria-label`.
 
+## Testing
+
+```bash
+pnpm test               # backend (Vitest + Fastify inject) and frontend (Vitest + Testing Library) unit tests
+pnpm --filter @lynx/web test:e2e   # Playwright — boots its own api+web servers against a dedicated test database
+```
+
+- **Backend tests use `buildApp()` + Fastify's `.inject()`** (`apps/api/src/modules/*/*.routes.test.ts`) — no real HTTP server or ports involved, exactly why `app.ts`/`server.ts` were split back in Phase 1. Each test file creates its own fixtures (signup/workspace/team through the real routes, not direct DB inserts) against a dedicated **`lynx_test` database** — a real, separate Postgres database, not a mock, so a passing test means the actual SQL and Drizzle queries ran. Files run serially (`fileParallelism: false`) since they share that one database; a global setup (`apps/api/test/global-setup.ts`) migrates and truncates it once per run.
+- **Frontend unit tests** (Vitest + Testing Library + jsdom) are deliberately few and targeted at the highest-value logic: `mapCachedIssues` (the two-cache-shape optimistic-update helper from Phase 8), `formatCount`, and `EmptyState`'s branching (3D vs. icon vs. compact) — the 3D scene itself is mocked out in that last one, since jsdom has no WebGL context and testing Three.js rendering isn't what a unit test is for.
+- **Playwright drives a real Chromium browser** through the spec's named critical flows — login, signup, logout, permissions, create/edit issue, status change, and assignment — against its own api+web server pair (ports 4010/5180, pointed at `lynx_test`, with `CORS_ORIGIN` set to match) so it never touches the dev servers or their demo data.
+- **This was the first time the app had actually run in a browser**, as opposed to being curl-tested or read for correctness — every prior phase's frontend verification caveat (see memory/prior phases) said as much. Writing these E2E tests immediately surfaced five real, previously-invisible bugs, all now fixed:
+  1. **Every "create X and navigate/close" form was silently non-functional under React 19 StrictMode.** `mutateAsync(vars, { onSuccess })`'s per-call callback is delivered through whichever `MutationObserver` instance is "current" at settle time — under StrictMode's double-invoked render, that can differ from the instance the calling closure captured, so the callback is dropped without error. The mutation itself (and its returned promise) still succeeds, which is what made this so easy to miss by reading the code. Fixed in every affected form (signup, login, create workspace/team/project/issue/cycle, delete issue) by calling the success handler directly off the already-reliable `await mutateAsync(...)`, not passing it as a mutate option.
+  2. **Signing out never actually redirected to `/login`.** `beforeLoad` route guards only run on navigation, not reactively when auth state flips while already on a page — logging out cleared the auth store but nothing ever called `navigate()`.
+  3. **`POST /auth/logout` (and any other no-body request) 400'd.** `apiFetch` always sent `Content-Type: application/json`, and Fastify's default JSON body parser rejects that header on an empty body. Fixed by only setting it when a body is actually present.
+  4. **Duplicate `id="name"` (and other field ids) across forms rendered on the same page** — `<label htmlFor={field.name}>` used the bare TanStack Form field key as the DOM id, so `CreateTeamForm` and `CreateProjectForm` (both rendered on the home page) collided, and a browser resolved the label ambiguously. Fixed with `useId()`-namespaced ids everywhere this pattern was used.
+  5. **The animated Radix `Select` (Phase 9) displayed a blank value after picking a new option.** The `forceMount`+`AnimatePresence` pattern reused from the Dialog/palette (Phase 6) fully unmounts `Select.Item`s on close — but `Select.Value`'s label lookup depends on those items staying registered. Fixed by dropping `forceMount`/Motion here specifically and using a `data-state`-driven CSS transition instead: Radix's own `Presence` utility waits for a real CSS transition to finish before unmounting, so the close still animates, and the items never disappear from Radix's registry in the first place.
+- **A root-level `<ErrorBoundary>`** now wraps the whole app (`main.tsx`), not just the Phase 9 3D scenes — a full-page "something went wrong, reload" fallback instead of a blank white screen on an unhandled render error.
+
 ## Prerequisites
 
 - Node.js ≥ 22
@@ -224,6 +245,7 @@ pnpm dev            # run all apps in dev mode
 pnpm build          # build all apps/packages
 pnpm typecheck      # tsc --noEmit / tsc -b across the workspace
 pnpm lint           # ESLint across the workspace
+pnpm test           # Vitest — backend (Fastify inject) + frontend (Testing Library) unit tests
 pnpm format         # Prettier write
 pnpm format:check   # Prettier check
 pnpm docker:up      # start Postgres + Redis
@@ -245,4 +267,4 @@ pnpm db:studio      # browse the database in Drizzle Studio
 - [x] Phase 7 — Real-time (WebSocket), optimistic updates
 - [x] Phase 8 — Analytics, performance, virtualization
 - [x] Phase 9 — 3D accents, advanced animations, empty/loading states
-- [ ] Phase 10 — Tests, CI, docs, final cleanup
+- [x] Phase 10 — Tests, E2E, docs, final cleanup (CI intentionally deferred)

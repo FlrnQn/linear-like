@@ -1,5 +1,6 @@
 import { createCycleSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
+import { useId } from 'react'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -7,6 +8,7 @@ import { useCreateCycle } from './use-create-cycle'
 
 export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSuccess: () => void }) {
   const createCycle = useCreateCycle(teamId)
+  const id = useId()
 
   const form = useForm({
     defaultValues: { name: '', startDate: '', endDate: '' },
@@ -17,7 +19,11 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
         startDate: value.startDate,
         endDate: value.endDate,
       })
-      await createCycle.mutateAsync(input, { onSuccess })
+      // See signup-form.tsx: calling onSuccess off the awaited promise
+      // rather than passing it to mutateAsync avoids a StrictMode-only bug
+      // where the per-call callback is silently never delivered.
+      await createCycle.mutateAsync(input)
+      onSuccess()
       form.reset()
     },
   })
@@ -33,11 +39,11 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
       <form.Field name="name">
         {(field) => (
           <div className="flex flex-col gap-1">
-            <label htmlFor={field.name} className="text-muted-foreground text-xs">
+            <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
               Cycle name
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="text"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -50,11 +56,11 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
       <form.Field name="startDate">
         {(field) => (
           <div className="flex flex-col gap-1">
-            <label htmlFor={field.name} className="text-muted-foreground text-xs">
+            <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
               Start
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="date"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -67,11 +73,11 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
       <form.Field name="endDate">
         {(field) => (
           <div className="flex flex-col gap-1">
-            <label htmlFor={field.name} className="text-muted-foreground text-xs">
+            <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
               End
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="date"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}

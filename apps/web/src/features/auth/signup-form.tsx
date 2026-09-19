@@ -1,5 +1,6 @@
 import { signupSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
+import { useId } from 'react'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -7,12 +8,21 @@ import { useSignup } from './use-signup'
 
 export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
   const signup = useSignup()
+  const id = useId()
 
   const form = useForm({
     defaultValues: { name: '', email: '', password: '' },
     validators: { onChange: signupSchema },
     onSubmit: async ({ value }) => {
-      await signup.mutateAsync(value, { onSuccess })
+      // Calling onSuccess directly off the awaited promise, rather than
+      // passing it as mutateAsync(vars, {onSuccess}), sidesteps a real
+      // StrictMode-only bug: that per-call callback is delivered through
+      // the MutationObserver instance current at settle time, which under
+      // React 19 StrictMode's double-invoked render can differ from the one
+      // this closure was created against — so it silently never fires,
+      // even though the mutation (and this promise) succeeds correctly.
+      await signup.mutateAsync(value)
+      onSuccess()
     },
   })
 
@@ -27,11 +37,11 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
       <form.Field name="name">
         {(field) => (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={field.name} className="text-sm font-medium">
+            <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
               Name
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="text"
               autoComplete="name"
               value={field.state.value}
@@ -49,11 +59,11 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
       <form.Field name="email">
         {(field) => (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={field.name} className="text-sm font-medium">
+            <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
               Email
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="email"
               autoComplete="email"
               value={field.state.value}
@@ -71,11 +81,11 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
       <form.Field name="password">
         {(field) => (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={field.name} className="text-sm font-medium">
+            <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
               Password
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="password"
               autoComplete="new-password"
               value={field.state.value}

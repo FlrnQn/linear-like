@@ -118,6 +118,7 @@ function TeamIssuesPage() {
         onSelectIssue={setSelectedIssueId}
         extraFilters={
           <select
+            aria-label="Filter by cycle"
             value={cycleFilter}
             onChange={(e) => setCycleFilter(e.target.value)}
             className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"

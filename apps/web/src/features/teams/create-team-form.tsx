@@ -1,5 +1,6 @@
 import { createTeamSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
+import { useId } from 'react'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -13,12 +14,17 @@ export function CreateTeamForm({
   onSuccess: () => void
 }) {
   const createTeam = useCreateTeam(workspaceId)
+  const id = useId()
 
   const form = useForm({
     defaultValues: { workspaceId, name: '', key: '' },
     validators: { onChange: createTeamSchema },
     onSubmit: async ({ value }) => {
-      await createTeam.mutateAsync(value, { onSuccess })
+      // See signup-form.tsx: calling onSuccess off the awaited promise
+      // rather than passing it to mutateAsync avoids a StrictMode-only bug
+      // where the per-call callback is silently never delivered.
+      await createTeam.mutateAsync(value)
+      onSuccess()
     },
   })
 
@@ -33,11 +39,11 @@ export function CreateTeamForm({
       <form.Field name="name">
         {(field) => (
           <div className="flex flex-col gap-1">
-            <label htmlFor={field.name} className="text-muted-foreground text-xs">
+            <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
               Team name
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="text"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -50,11 +56,11 @@ export function CreateTeamForm({
       <form.Field name="key">
         {(field) => (
           <div className="flex w-20 flex-col gap-1">
-            <label htmlFor={field.name} className="text-muted-foreground text-xs">
+            <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
               Key
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="text"
               placeholder="ENG"
               value={field.state.value}
@@ -70,6 +76,7 @@ export function CreateTeamForm({
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
+            aria-label="Add team"
             className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-sm font-medium transition-opacity disabled:opacity-50"
           >
             Add

@@ -53,7 +53,9 @@ export async function apiFetch<T>(
     ...options,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      // Fastify's default JSON body parser 400s on an empty body sent with
+      // this header (e.g. logout, delete) — only set it when there's a body.
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
     },

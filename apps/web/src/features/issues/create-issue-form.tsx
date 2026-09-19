@@ -48,7 +48,11 @@ export function CreateIssueForm({
         cycleId: value.cycleId || undefined,
         labelIds: value.labelIds,
       })
-      await createIssue.mutateAsync(input, { onSuccess })
+      // See signup-form.tsx: calling onSuccess off the awaited promise
+      // rather than passing it to mutateAsync avoids a StrictMode-only bug
+      // where the per-call callback is silently never delivered.
+      await createIssue.mutateAsync(input)
+      onSuccess()
       form.reset()
     },
   })
@@ -93,6 +97,7 @@ export function CreateIssueForm({
         <form.Field name="assigneeId">
           {(field) => (
             <select
+              aria-label="Assignee"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
@@ -110,6 +115,7 @@ export function CreateIssueForm({
         <form.Field name="projectId">
           {(field) => (
             <select
+              aria-label="Project"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
@@ -127,6 +133,7 @@ export function CreateIssueForm({
         <form.Field name="cycleId">
           {(field) => (
             <select
+              aria-label="Cycle"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"

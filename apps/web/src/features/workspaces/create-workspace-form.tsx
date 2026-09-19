@@ -1,6 +1,6 @@
 import { createWorkspaceSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
-import { useRef } from 'react'
+import { useId, useRef } from 'react'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -17,12 +17,17 @@ function slugify(value: string) {
 export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
   const createWorkspace = useCreateWorkspace()
   const slugTouched = useRef(false)
+  const id = useId()
 
   const form = useForm({
     defaultValues: { name: '', slug: '' },
     validators: { onChange: createWorkspaceSchema },
     onSubmit: async ({ value }) => {
-      await createWorkspace.mutateAsync(value, { onSuccess })
+      // See signup-form.tsx: calling onSuccess off the awaited promise
+      // rather than passing it to mutateAsync avoids a StrictMode-only bug
+      // where the per-call callback is silently never delivered.
+      await createWorkspace.mutateAsync(value)
+      onSuccess()
     },
   })
 
@@ -37,11 +42,11 @@ export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
       <form.Field name="name">
         {(field) => (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={field.name} className="text-sm font-medium">
+            <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
               Workspace name
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="text"
               value={field.state.value}
               onBlur={field.handleBlur}
@@ -63,11 +68,11 @@ export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
       <form.Field name="slug">
         {(field) => (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={field.name} className="text-sm font-medium">
+            <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
               Slug
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="text"
               value={field.state.value}
               onBlur={field.handleBlur}

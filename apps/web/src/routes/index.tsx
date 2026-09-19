@@ -1,5 +1,5 @@
 import { cn } from '@lynx/shared'
-import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { FolderKanban, Users } from 'lucide-react'
 import { useEffect } from 'react'
 
@@ -31,6 +31,7 @@ function HomePage() {
   const user = useAuthStore((state) => state.user)
   const workspaces = useWorkspaces()
   const logout = useLogout()
+  const navigate = useNavigate()
   const activeWorkspaceId = useWorkspaceStore((state) => state.activeWorkspaceId ?? undefined)
   const setActiveWorkspaceId = useWorkspaceStore((state) => state.setActiveWorkspaceId)
 
@@ -58,7 +59,12 @@ function HomePage() {
         </div>
         <button
           type="button"
-          onClick={() => logout.mutate()}
+          onClick={() => {
+            // beforeLoad route guards only run on navigation, not reactively
+            // when auth state changes — an explicit navigate() is required
+            // after logout, the same way login/signup explicitly navigate in.
+            void logout.mutateAsync().then(() => navigate({ to: '/login' }))
+          }}
           className="text-muted-foreground hover:text-foreground text-sm transition-colors"
         >
           Sign out

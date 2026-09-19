@@ -1,5 +1,6 @@
 import { loginSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
+import { useId } from 'react'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -7,12 +8,17 @@ import { useLogin } from './use-login'
 
 export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const login = useLogin()
+  const id = useId()
 
   const form = useForm({
     defaultValues: { email: '', password: '' },
     validators: { onChange: loginSchema },
     onSubmit: async ({ value }) => {
-      await login.mutateAsync(value, { onSuccess })
+      // See signup-form.tsx: calling onSuccess off the awaited promise
+      // rather than passing it to mutateAsync avoids a StrictMode-only bug
+      // where the per-call callback is silently never delivered.
+      await login.mutateAsync(value)
+      onSuccess()
     },
   })
 
@@ -27,11 +33,11 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       <form.Field name="email">
         {(field) => (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={field.name} className="text-sm font-medium">
+            <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
               Email
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="email"
               autoComplete="email"
               value={field.state.value}
@@ -49,11 +55,11 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       <form.Field name="password">
         {(field) => (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={field.name} className="text-sm font-medium">
+            <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
               Password
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="password"
               autoComplete="current-password"
               value={field.state.value}

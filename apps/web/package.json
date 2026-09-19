@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
@@ -38,16 +40,23 @@
   },
   "devDependencies": {
     "@lynx/config": "workspace:*",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/router-devtools": "^1.121.0",
     "@tanstack/router-plugin": "^1.121.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^22.10.10",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "cross-env": "^10.1.0",
+    "jsdom": "^30.1.0",
     "tailwindcss": "^4.0.6",
     "typescript": "^5.7.3",
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "vitest": "^5.0.1"
   }
 }

@@ -26,7 +26,9 @@ export async function buildApp() {
     logger:
       env.NODE_ENV === 'development'
         ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
-        : true,
+        : env.NODE_ENV === 'test'
+          ? false
+          : true,
   })
 
   await registerCors(app)

@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
 
 import { ActivityFeed } from '@/features/activities/activity-feed'
 import { useActivities } from '@/features/activities/use-activities'
@@ -35,6 +36,32 @@ export function IssueDetailDialog({
   const updateIssue = useUpdateIssue()
   const deleteIssue = useDeleteIssue()
 
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+
+  useEffect(() => {
+    if (issue.data) {
+      setTitle(issue.data.title)
+      setDescription(issue.data.description ?? '')
+    }
+  }, [issue.data])
+
+  function commitTitle() {
+    const trimmed = title.trim()
+    if (!issue.data || trimmed.length === 0 || trimmed === issue.data.title) {
+      setTitle(issue.data?.title ?? '')
+      return
+    }
+    updateIssue.mutate({ issueId, input: { title: trimmed } })
+  }
+
+  function commitDescription() {
+    if (!issue.data) return
+    const normalized = description.trim().length === 0 ? null : description
+    if (normalized === (issue.data.description ?? null)) return
+    updateIssue.mutate({ issueId, input: { description: normalized } })
+  }
+
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
@@ -59,7 +86,10 @@ export function IssueDetailDialog({
             <Dialog.Description className="sr-only">
               Details, activity, and comments for this issue
             </Dialog.Description>
-            <Dialog.Close className="text-muted-foreground hover:text-foreground absolute right-4 top-4">
+            <Dialog.Close
+              aria-label="Close"
+              className="text-muted-foreground hover:text-foreground absolute right-4 top-4"
+            >
               <X className="h-5 w-5" />
             </Dialog.Close>
 
@@ -67,13 +97,26 @@ export function IssueDetailDialog({
               <p className="text-muted-foreground mt-4 text-sm">Loading…</p>
             ) : (
               <>
-                <h2 className="mb-4 mt-1 pr-8 text-lg font-semibold">{issue.data.title}</h2>
+                <input
+                  aria-label="Issue title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onBlur={commitTitle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur()
+                  }}
+                  className="focus:border-accent -ml-2 mb-4 mt-1 w-[calc(100%-1rem)] rounded-md border border-transparent px-2 py-0.5 pr-8 text-lg font-semibold outline-none"
+                />
 
-                {issue.data.description && (
-                  <p className="text-muted-foreground mb-6 whitespace-pre-wrap text-sm">
-                    {issue.data.description}
-                  </p>
-                )}
+                <textarea
+                  aria-label="Issue description"
+                  placeholder="Add a description…"
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onBlur={commitDescription}
+                  className="text-muted-foreground focus:border-accent -ml-2 mb-6 w-[calc(100%-1rem)] resize-none rounded-md border border-transparent px-2 py-0.5 text-sm outline-none"
+                />
 
                 <div className="border-border mb-6 grid grid-cols-2 gap-3 rounded-lg border p-3 text-sm sm:grid-cols-3">
                   <div>
@@ -93,6 +136,7 @@ export function IssueDetailDialog({
                   <div>
                     <p className="text-muted-foreground mb-1 text-xs">Assignee</p>
                     <select
+                      aria-label="Assignee"
                       value={issue.data.assignee?.id ?? ''}
                       onChange={(e) =>
                         updateIssue.mutate({
@@ -113,6 +157,7 @@ export function IssueDetailDialog({
                   <div>
                     <p className="text-muted-foreground mb-1 text-xs">Project</p>
                     <select
+                      aria-label="Project"
                       value={issue.data.projectId ?? ''}
                       onChange={(e) =>
                         updateIssue.mutate({
@@ -133,6 +178,7 @@ export function IssueDetailDialog({
                   <div>
                     <p className="text-muted-foreground mb-1 text-xs">Cycle</p>
                     <select
+                      aria-label="Cycle"
                       value={issue.data.cycleId ?? ''}
                       onChange={(e) =>
                         updateIssue.mutate({
@@ -170,7 +216,12 @@ export function IssueDetailDialog({
 
                 <button
                   type="button"
-                  onClick={() => deleteIssue.mutate(issueId, { onSuccess: onClose })}
+                  onClick={() => {
+                    // See signup-form.tsx: a per-call onSuccess passed to
+                    // mutate()/mutateAsync() can be silently dropped under
+                    // StrictMode — await the promise directly instead.
+                    void deleteIssue.mutateAsync(issueId).then(onClose)
+                  }}
                   className="mt-6 self-start text-xs text-red-500 hover:underline"
                 >
                   Delete issue

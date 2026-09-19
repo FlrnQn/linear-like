@@ -1,5 +1,6 @@
 import { createProjectSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
+import { useId } from 'react'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -13,6 +14,7 @@ export function CreateProjectForm({
   onSuccess: () => void
 }) {
   const createProject = useCreateProject(workspaceId)
+  const id = useId()
 
   const form = useForm({
     defaultValues: { name: '', color: '#3b82f6' },
@@ -22,7 +24,11 @@ export function CreateProjectForm({
         name: value.name,
         color: value.color,
       })
-      await createProject.mutateAsync(input, { onSuccess })
+      // See signup-form.tsx: calling onSuccess off the awaited promise
+      // rather than passing it to mutateAsync avoids a StrictMode-only bug
+      // where the per-call callback is silently never delivered.
+      await createProject.mutateAsync(input)
+      onSuccess()
       form.reset()
     },
   })
@@ -38,11 +44,11 @@ export function CreateProjectForm({
       <form.Field name="name">
         {(field) => (
           <div className="flex flex-col gap-1">
-            <label htmlFor={field.name} className="text-muted-foreground text-xs">
+            <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
               Project name
             </label>
             <input
-              id={field.name}
+              id={`${id}-${field.name}`}
               type="text"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -70,6 +76,7 @@ export function CreateProjectForm({
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting || name.trim().length === 0}
+            aria-label="Add project"
             className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-sm font-medium transition-opacity disabled:opacity-50"
           >
             Add
