@@ -55,10 +55,15 @@ lynx/
 │   ├── types/                  # shared TypeScript types (@lynx/types)
 │   └── shared/                 # shared runtime utils, e.g. cn() (@lynx/shared)
 │
-├── docker-compose.yml           # PostgreSQL 17 + Redis 7
+├── docker-compose.yml           # Postgres 17 + Redis 7 (always); api + web + migrate behind the `full` profile
+├── .dockerignore
 ├── turbo.json
 ├── pnpm-workspace.yaml
 └── package.json
+
+apps/api/Dockerfile              # runs @lynx/api via tsx (see "Running everything in Docker")
+apps/web/Dockerfile              # vite build → static files served by nginx
+apps/web/nginx.conf              # SPA fallback + asset caching for the built web app
 ```
 
 `packages/ui` from the target architecture isn't created yet — it will show up once a component is truly shared _across_ features (not just within one), rather than as an empty shell today.
@@ -203,23 +208,54 @@ pnpm --filter @lynx/web test:e2e   # Playwright — boots its own api+web server
 
 - Node.js ≥ 22
 - pnpm ≥ 12 (`corepack enable` or `brew install pnpm`)
-- Docker (for PostgreSQL + Redis)
+- Docker + Docker Compose v2 (for Postgres/Redis always, and optionally the whole app — see below)
 
-## Quickstart
+## Running locally (recommended for active development)
+
+The API and web app run directly on your machine with hot reload (`tsx watch` / Vite); only Postgres and Redis run in Docker.
 
 ```bash
 pnpm install
-pnpm docker:up     # starts Postgres + Redis
+pnpm docker:up     # starts Postgres + Redis only
 pnpm db:migrate    # creates all tables
 pnpm db:seed       # populates demo data
-pnpm dev           # starts the API (:4000) and the web app (:5173)
+pnpm dev           # starts the API (:4000) and the web app (:5173), with hot reload
 ```
 
 Open http://localhost:5173 — you'll land on `/login`. Create an account via `/signup` (or use one of the seeded users — see `apps/api/src/db/seed.ts` — though seeded users have no password set, so sign up fresh for now), create your first workspace and team from the home screen, then click into the team to create/assign/prioritize/label/comment on issues, or drag cards between columns on the Kanban board. Press **⌘K** / **Ctrl+K** anywhere to search issues or jump to a team/project. Open the same workspace in two browser windows (or two browsers) to see edits from one appear live in the other. The API's `/health` endpoint (Postgres + Redis probes) is still available for ops/monitoring.
 
+Stop the infra with `pnpm docker:down` when you're done; `pnpm dev` itself just runs local Node/Vite processes and doesn't need stopping via Docker.
+
+## Running everything in Docker
+
+For running the whole app without installing Node locally, or to sanity-check a production-like build: `apps/api/Dockerfile` and `apps/web/Dockerfile` build the API and web app into containers, alongside Postgres and Redis. These three extra services (`api`, `web`, `migrate`) sit behind a Compose **`full` profile**, so they never start by accident — plain `pnpm docker:up` / `docker compose up` still only starts Postgres + Redis, exactly as above.
+
+```bash
+pnpm docker:full:up     # builds api + web images, runs migrations once, starts everything
+pnpm docker:full:logs   # tail api + web logs
+pnpm docker:full:down   # stop and remove api + web + migrate (Postgres/Redis keep running)
+```
+
+Open http://localhost:5173 — same app, same ports, now fully containerized. What happens on `docker:full:up`:
+
+1. `postgres` and `redis` start (or are reused if already running from `pnpm docker:up`).
+2. `migrate` runs once against `postgres` (`tsx src/db/migrate.ts`) and exits — safe to re-run, already-applied migrations are no-ops. Seeding is **not** automatic (it truncates all tables); run it manually once migrations are in:
+   ```bash
+   docker compose --profile full exec api pnpm exec tsx src/db/seed.ts
+   ```
+3. `api` starts once `migrate` exits successfully.
+4. `web` (built by Vite, served by nginx with SPA-fallback routing) starts alongside it.
+
+A few things worth knowing if you touch the Docker setup:
+
+- **The API image runs TypeScript source directly via `tsx`**, the same way `pnpm dev` does — not `apps/api`'s own `tsc` build output. `@lynx/types`/`@lynx/shared` are consumed as raw `.ts` workspace source everywhere in this repo (no build step of their own), and the compiled `dist/*.js` files' relative imports aren't extension-qualified for Node's native ESM resolver — so a plain `node dist/server.js` currently can't run standalone. `tsx` resolves both correctly, matching the already-proven dev path, so the Docker image sidesteps the issue rather than papering over it.
+- **`VITE_API_URL` is baked into the web bundle at build time**, not read at container start — Vite inlines `import.meta.env.VITE_API_URL` during `vite build`. The Dockerfile takes it as a build arg (`docker-compose.yml` passes `http://localhost:${API_PORT:-4000}` by default, i.e. the URL your *browser* can reach, not the internal `api` service name). Change `API_PORT` before running `docker:full:up` if you need a different port — changing it afterward requires a rebuild (`pnpm docker:full:up` again; Compose will notice the build arg changed).
+- **Override ports/secrets via a root `.env` file** (not committed) or exported env vars — `API_PORT`, `WEB_PORT`, `JWT_SECRET`, `POSTGRES_*`, `REDIS_PORT` all follow the same "everything has a working default" approach as local dev (see [Environment variables](#environment-variables)).
+- Rebuild after dependency or source changes with `pnpm docker:full:up` again (it always passes `--build`); use `docker compose build --no-cache api` for a clean rebuild if a stale layer ever seems suspect.
+
 ## Environment variables
 
-No secrets are required to run locally — every variable below has a working default (matching `docker-compose.yml`), so `pnpm dev` runs without any `.env` file. Override by exporting real environment variables or creating your own `.env` in `apps/api/` (loaded via `dotenv/config`).
+No secrets are required to run locally or in Docker — every variable below has a working default (matching `docker-compose.yml`), so neither `pnpm dev` nor `pnpm docker:full:up` need any `.env` file. Override by exporting real environment variables, or creating your own `.env` in `apps/api/` for local dev (loaded via `dotenv/config`) or at the repo root for Docker Compose (read automatically by `docker compose`).
 
 | Variable                                                                | Default                                     | Used by        |
 | ----------------------------------------------------------------------- | ------------------------------------------- | -------------- |
@@ -235,25 +271,30 @@ No secrets are required to run locally — every variable below has a working de
 | `VITE_API_URL`                                                          | `http://localhost:4000`                     | web            |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` | `lynx` / `lynx` / `lynx` / `5432`           | docker-compose |
 | `REDIS_PORT`                                                            | `6379`                                      | docker-compose |
+| `API_PORT`                                                              | `4000`                                      | docker-compose (`full` profile) |
+| `WEB_PORT`                                                              | `5173`                                      | docker-compose (`full` profile) |
 
 ## Available commands
 
 Run from the repo root (orchestrated by Turborepo across all workspaces):
 
 ```bash
-pnpm dev            # run all apps in dev mode
-pnpm build          # build all apps/packages
-pnpm typecheck      # tsc --noEmit / tsc -b across the workspace
-pnpm lint           # ESLint across the workspace
-pnpm test           # Vitest — backend (Fastify inject) + frontend (Testing Library) unit tests
-pnpm format         # Prettier write
-pnpm format:check   # Prettier check
-pnpm docker:up      # start Postgres + Redis
-pnpm docker:down    # stop Postgres + Redis
-pnpm db:generate    # generate a migration from the schema
-pnpm db:migrate     # apply pending migrations
-pnpm db:seed        # reset + seed demo data
-pnpm db:studio      # browse the database in Drizzle Studio
+pnpm dev              # run all apps in dev mode
+pnpm build            # build all apps/packages
+pnpm typecheck        # tsc --noEmit / tsc -b across the workspace
+pnpm lint             # ESLint across the workspace
+pnpm test             # Vitest — backend (Fastify inject) + frontend (Testing Library) unit tests
+pnpm format           # Prettier write
+pnpm format:check     # Prettier check
+pnpm docker:up        # start Postgres + Redis only
+pnpm docker:down      # stop Postgres + Redis
+pnpm docker:full:up   # build + start api, web, migrate, Postgres, Redis (whole app in Docker)
+pnpm docker:full:down # stop api, web, migrate (Postgres/Redis keep running)
+pnpm docker:full:logs # tail api + web container logs
+pnpm db:generate      # generate a migration from the schema
+pnpm db:migrate       # apply pending migrations
+pnpm db:seed          # reset + seed demo data
+pnpm db:studio        # browse the database in Drizzle Studio
 ```
 
 ## Roadmap

@@ -34,6 +34,61 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: lynx-migrate
+    command: ['pnpm', 'exec', 'tsx', 'src/db/migrate.ts']
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-lynx}:${POSTGRES_PASSWORD:-lynx}@postgres:5432/${POSTGRES_DB:-lynx}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: lynx-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://${POSTGRES_USER:-lynx}:${POSTGRES_PASSWORD:-lynx}@postgres:5432/${POSTGRES_DB:-lynx}
+      REDIS_URL: redis://redis:6379
+      # Must match the *browser-facing* origin of the web container below.
+      CORS_ORIGIN: http://localhost:${WEB_PORT:-5173}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-this-is-not-a-real-secret}
+    ports:
+      - '${API_PORT:-4000}:4000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Baked into the JS bundle at build time — the URL the *browser* can
+        # reach, i.e. the host-mapped API port, not the Docker service name.
+        VITE_API_URL: http://localhost:${API_PORT:-4000}
+    container_name: lynx-web
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-5173}:80'
+    depends_on:
+      - api
+
 volumes:
   lynx_postgres_data:
   lynx_redis_data:
