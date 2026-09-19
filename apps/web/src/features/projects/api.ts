@@ -6,6 +6,10 @@ export function listProjects(workspaceId: string) {
   return apiFetch<Project[]>(`/projects?workspaceId=${workspaceId}`)
 }
 
+export function getProject(id: string) {
+  return apiFetch<Project>(`/projects/${id}`)
+}
+
 export function createProject(input: CreateProjectInput) {
   return apiFetch<Project>('/projects', {
     method: 'POST',

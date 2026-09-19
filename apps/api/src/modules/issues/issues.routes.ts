@@ -4,24 +4,31 @@ import { z } from 'zod'
 
 import { NotFoundError } from '../../lib/errors'
 import { requireWorkspaceRole } from '../../middleware/require-workspace-role'
+import { getProjectById } from '../projects/projects.service'
 import { getTeamById } from '../teams/teams.service'
 import {
   createIssue,
   deleteIssue,
   getIssueById,
   getWorkspaceIdForIssue,
+  listIssuesForProject,
   listIssuesForTeam,
   updateIssue,
 } from './issues.service'
 
-const listIssuesQuerySchema = z.object({
-  teamId: z.string().uuid(),
-  status: z.enum(ISSUE_STATUSES).optional(),
-  assigneeId: z.string().uuid().optional(),
-  cycleId: z.string().uuid().optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-})
+const listIssuesQuerySchema = z
+  .object({
+    teamId: z.string().uuid().optional(),
+    projectId: z.string().uuid().optional(),
+    status: z.enum(ISSUE_STATUSES).optional(),
+    assigneeId: z.string().uuid().optional(),
+    cycleId: z.string().uuid().optional(),
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  })
+  .refine((value) => Boolean(value.teamId) || Boolean(value.projectId), {
+    message: 'Either teamId or projectId is required',
+  })
 
 const issueIdParamsSchema = z.object({ id: z.string().uuid() })
 
@@ -41,16 +48,29 @@ export const issuesRoutes: FastifyPluginAsync = async (app) => {
   app.get('/issues', { preHandler: [app.authenticate] }, async (request) => {
     const query = listIssuesQuerySchema.parse(request.query)
 
-    const team = await getTeamById(query.teamId)
-    if (!team) throw new NotFoundError('Team not found')
+    if (query.teamId) {
+      const team = await getTeamById(query.teamId)
+      if (!team) throw new NotFoundError('Team not found')
 
-    await requireWorkspaceRole(request.user.sub, team.workspaceId, [
+      await requireWorkspaceRole(request.user.sub, team.workspaceId, [
+        'OWNER',
+        'ADMIN',
+        'MEMBER',
+        'GUEST',
+      ])
+      return listIssuesForTeam(query.teamId, query)
+    }
+
+    const project = await getProjectById(query.projectId!)
+    if (!project) throw new NotFoundError('Project not found')
+
+    await requireWorkspaceRole(request.user.sub, project.workspaceId, [
       'OWNER',
       'ADMIN',
       'MEMBER',
       'GUEST',
     ])
-    return listIssuesForTeam(query.teamId, query)
+    return listIssuesForProject(query.projectId!, query)
   })
 
   app.get('/issues/:id', { preHandler: [app.authenticate] }, async (request) => {

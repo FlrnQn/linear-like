@@ -10,6 +10,7 @@ import { healthRoutes } from './modules/health/health.routes'
 import { issuesRoutes } from './modules/issues/issues.routes'
 import { labelsRoutes } from './modules/labels/labels.routes'
 import { projectsRoutes } from './modules/projects/projects.routes'
+import { searchRoutes } from './modules/search/search.routes'
 import { teamsRoutes } from './modules/teams/teams.routes'
 import { usersRoutes } from './modules/users/users.routes'
 import { workspacesRoutes } from './modules/workspaces/workspaces.routes'
@@ -17,6 +18,7 @@ import { registerCookie } from './plugins/cookie'
 import { registerCors } from './plugins/cors'
 import { registerJwt } from './plugins/jwt'
 import { registerSensible } from './plugins/sensible'
+import { registerWebsocket } from './websocket/websocket.plugin'
 
 export async function buildApp() {
   const app = Fastify({
@@ -30,6 +32,7 @@ export async function buildApp() {
   await registerSensible(app)
   await registerCookie(app)
   await registerJwt(app)
+  await registerWebsocket(app)
 
   app.setErrorHandler((error: FastifyError | ZodError, _request, reply) => {
     if (error instanceof ZodError) {
@@ -66,6 +69,7 @@ export async function buildApp() {
   await app.register(issuesRoutes)
   await app.register(commentsRoutes)
   await app.register(activitiesRoutes)
+  await app.register(searchRoutes)
 
   return app
 }

@@ -54,6 +54,6 @@ export const projectsRoutes: FastifyPluginAsync = async (app) => {
     if (!project) throw new NotFoundError('Project not found')
     await requireWorkspaceRole(request.user.sub, project.workspaceId, ['OWNER', 'ADMIN', 'MEMBER'])
 
-    return updateProject(id, body)
+    return updateProject(id, request.user.sub, body)
   })
 }

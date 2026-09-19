@@ -2,20 +2,20 @@
 
 A Linear-inspired project management platform, built from scratch as a technical playground for modern full-stack TypeScript practices.
 
-> **Status: Phase 5 — Projects, Cycles, Kanban.** Issues can now belong to a project and a cycle, and a full drag-and-drop Kanban board sits alongside the list view. Command palette, animations, and visual polish land in the phases that follow.
+> **Status: Phase 7 — Real-time.** Every workspace member sees issue/comment/project changes appear live via WebSocket, no refresh needed. A command palette, persistent sidebar, light/dark theme, and Motion-driven polish landed in Phase 6. Analytics, virtualization, and 3D accents are what's left.
 
 ## Stack
 
-| Layer      | Choices                                                                                                                         |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend   | React 19, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Form, Zustand, dnd-kit, Radix UI, Lucide, Tailwind CSS v4 |
-| Backend    | Node.js, TypeScript, Fastify 5, PostgreSQL, Redis                                                                               |
-| Database   | Drizzle ORM (node-postgres driver), Drizzle Kit migrations, snake_case DB / camelCase JS via `casing: 'snake_case'`             |
-| Auth       | Argon2 password hashing, JWT access tokens (`@fastify/jwt`), rotating opaque refresh tokens in an httpOnly cookie               |
-| Validation | Zod schemas shared between web and api via `@lynx/types` (request bodies, forms, env parsing)                                   |
-| Tooling    | pnpm workspaces, Turborepo, ESLint (flat config), Prettier, Docker Compose                                                      |
+| Layer      | Choices                                                                                                                                       |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend   | React 19, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Form, Zustand, dnd-kit, Radix UI, cmdk, Motion, Lucide, Tailwind CSS v4 |
+| Backend    | Node.js, TypeScript, Fastify 5, PostgreSQL, Redis (pub/sub), WebSocket (`@fastify/websocket`)                                                 |
+| Database   | Drizzle ORM (node-postgres driver), Drizzle Kit migrations, snake_case DB / camelCase JS via `casing: 'snake_case'`                           |
+| Auth       | Argon2 password hashing, JWT access tokens (`@fastify/jwt`), rotating opaque refresh tokens in an httpOnly cookie                             |
+| Validation | Zod schemas shared between web and api via `@lynx/types` (request bodies, forms, env parsing)                                                 |
+| Tooling    | pnpm workspaces, Turborepo, ESLint (flat config), Prettier, Docker Compose                                                                    |
 
-Additional libraries called for in the full spec (TanStack Virtual, Motion, shadcn/ui, Recharts, Three.js/R3F) are **not installed yet**. They're introduced in the phase where they're first actually used, so every dependency in `package.json` has a real caller.
+Additional libraries called for in the full spec (TanStack Virtual, shadcn/ui, Recharts, Three.js/R3F) are **not installed yet**. They're introduced in the phase where they're first actually used, so every dependency in `package.json` has a real caller.
 
 ## Architecture
 
@@ -25,23 +25,25 @@ lynx/
 │   ├── web/                    # React + Vite frontend
 │   │   └── src/
 │   │       ├── app/            # router/query-client setup, AppProviders (session bootstrap)
-│   │       ├── routes/         # TanStack Router file-based routes (/, /login, /signup, /teams/$teamId)
-│   │       ├── features/       # auth, workspaces, teams, projects, cycles, issues, labels, comments, activities
-│   │       ├── components/     # (reserved) shared UI components
-│   │       ├── layouts/        # (reserved) page layouts (sidebar, shell…) — Phase 6
+│   │       ├── routes/         # TanStack Router routes (/, /login, /signup, /settings, /teams/$id, /projects/$id)
+│   │       ├── features/       # auth, workspaces, teams, projects, cycles, issues, labels, comments,
+│   │       │                   # activities, search, command-palette, realtime
+│   │       ├── components/     # cross-feature shared UI (e.g. ToastStack)
+│   │       ├── layouts/        # Sidebar (collapsible, animated, workspace nav)
 │   │       ├── hooks/          # (reserved) cross-cutting hooks
 │   │       ├── lib/            # api-client (auth header + refresh-on-401), API base URL
-│   │       ├── stores/         # Zustand auth-store (in-memory access token + user)
+│   │       ├── stores/         # Zustand: auth, ui (theme/sidebar/palette), workspace, toast
 │   │       └── styles/         # Tailwind entry + design tokens
 │   │
 │   └── api/                    # Fastify backend
 │       └── src/
-│           ├── modules/        # health, auth, users, workspaces, teams, projects, cycles, issues, labels, comments, activities
+│           ├── modules/        # health, auth, users, workspaces, teams, projects, cycles, issues,
+│           │                   # labels, comments, activities, search
 │           ├── plugins/        # Fastify plugins (cors, sensible, cookie, jwt)
 │           ├── middleware/     # requireWorkspaceRole (RBAC check)
 │           ├── lib/            # HttpError hierarchy shared by routes and services
 │           ├── db/             # Postgres pool, Redis client, Drizzle schema/relations/migrations/seed
-│           ├── websocket/      # (reserved) real-time layer — Phase 7
+│           ├── websocket/      # WS route + Redis pub/sub fan-out (events.ts, websocket.plugin.ts)
 │           ├── app.ts          # buildApp(): assembles the Fastify instance (testable)
 │           └── server.ts       # boots buildApp() and starts listening
 │
@@ -125,6 +127,25 @@ The seed is deterministic (`faker.seed(1234)`) and produces one workspace ("Lynx
 - **Drag-and-drop is genuinely optimistic across every open view**, not just the dragged card. `useUpdateIssue` (`apps/web/src/features/issues/use-update-issue.ts`) patches the single-issue cache _and_ every currently-cached `['issues', ...]` list query — so if the List view and Kanban view both have data cached, dragging a card in the Kanban updates the List's cache too, with automatic rollback on error.
 - **New issue position uses fractional ordering**: dropping a card computes `sortOrder` as the midpoint between its new neighbors (`(prev + next) / 2`), falling back to `± 1000` at either end of a column. Only the dragged issue is written — no bulk renumbering of the rest of the column.
 
+## Command palette, sidebar & polish
+
+- **`cmdk` inside a hand-rolled Radix `Dialog`**, not `Command.Dialog`. cmdk's own dialog wrapper doesn't expose the `forceMount` hook Motion needs for exit animations, so the palette reuses the same Radix-`Dialog` + `AnimatePresence(forceMount)` pattern as the issue detail view — one consistent way to build an animated modal across the app, instead of two.
+- **Global `⌘K` listener lives in the palette component itself** (a `keydown` effect at the root), not a separate keybinding library — a single shortcut didn't justify one.
+- **`activeWorkspaceId` moved from page-local `useState` to a persisted Zustand store** (`stores/workspace-store.ts`). The palette is rendered once at the app root and has no route params to read a workspace from, so "which workspace am I in" had to become real global state — the first genuine cross-page UI-state need in the app, exactly the case Zustand is for.
+- **Theme is a Zustand-persisted class toggle** (`.dark` / default `:root`), not a `prefers-color-scheme` media query alone — initialized from the OS preference once, then fully user-controlled via Settings or the palette.
+- **Optimistic-update errors now surface as a toast**, not just a silent cache rollback — `useUpdateIssue`'s `onError` pushes "changes reverted" so a failed drag isn't invisible.
+- Motion is used for: the palette and issue-detail dialog (fade + scale enter, `forceMount`+`AnimatePresence` for real exit animations on the palette), the sidebar's collapse width transition, issue-row layout/enter/exit animations in the list view, and the toast stack's spring-in/fade-out. Dragged Kanban cards deliberately do **not** get a Motion `layout` animation — it fights with dnd-kit's own transform-based positioning on the same element, and a broken drag would be worse than no animation.
+
+## Real-time
+
+- **Redis finally earns its place in the stack.** Phases 1–6 only used it for a health-check ping; Phase 7 uses it for what it's actually for — pub/sub fan-out (`workspace:events` channel) so `issue.*`/`comment.*`/`project.updated` events reach every Fastify instance a client might be connected to, not just the instance that handled the mutation.
+- **The event publisher is best-effort.** `publishWorkspaceEvent()` swallows its own errors — a Redis hiccup must never fail the issue update/comment/etc. that triggered it. Real-time is a UX enhancement, not a correctness dependency.
+- **Auth handshake is a query-param JWT** (`wss://.../ws?token=...`), because the browser `WebSocket` constructor can't set custom headers. This is a known, widely-used simplification for this exact constraint — a hardened production system would prefer a short-lived one-time ticket instead of the access token itself, to avoid the token appearing in server/proxy logs. Documented here rather than silently shipped.
+- **Room membership is verified server-side on every `subscribe` message** (`requireWorkspaceRole`), not trusted from the client — a socket only starts receiving a workspace's events after the same permission check every REST endpoint uses.
+- **The frontend applies full server objects, not deltas.** `issue.updated` events carry the entire updated `Issue`; the client does `setQueryData` directly instead of re-deriving a patch, so it can never drift from what the server actually persisted (unlike the deliberately-partial optimistic patch used for local mutations).
+- **Self-originated events are silenced.** Every event carries `actorId`; the client compares it to the logged-in user before showing a toast, so your own edits don't narrate themselves back at you — only teammates' changes do.
+- **Reconnection is a flat 2s retry** while the hook is mounted, not exponential backoff — simple and sufficient at this scale; the effect re-runs (and reconnects with a fresh token) automatically whenever the access token rotates.
+
 ## Prerequisites
 
 - Node.js ≥ 22
@@ -141,7 +162,7 @@ pnpm db:seed       # populates demo data
 pnpm dev           # starts the API (:4000) and the web app (:5173)
 ```
 
-Open http://localhost:5173 — you'll land on `/login`. Create an account via `/signup` (or use one of the seeded users — see `apps/api/src/db/seed.ts` — though seeded users have no password set, so sign up fresh for now), create your first workspace and team from the home screen, then click into the team to create/assign/prioritize/label/comment on issues. The API's `/health` endpoint (Postgres + Redis probes) is still available for ops/monitoring.
+Open http://localhost:5173 — you'll land on `/login`. Create an account via `/signup` (or use one of the seeded users — see `apps/api/src/db/seed.ts` — though seeded users have no password set, so sign up fresh for now), create your first workspace and team from the home screen, then click into the team to create/assign/prioritize/label/comment on issues, or drag cards between columns on the Kanban board. Press **⌘K** / **Ctrl+K** anywhere to search issues or jump to a team/project. Open the same workspace in two browser windows (or two browsers) to see edits from one appear live in the other. The API's `/health` endpoint (Postgres + Redis probes) is still available for ops/monitoring.
 
 ## Environment variables
 
@@ -188,8 +209,8 @@ pnpm db:studio      # browse the database in Drizzle Studio
 - [x] Phase 3 — Auth, workspaces, teams, users
 - [x] Phase 4 — Issues, statuses, priorities, labels, comments, activity
 - [x] Phase 5 — Projects, cycles, Kanban (dnd-kit)
-- [ ] Phase 6 — Command palette, keyboard shortcuts, search, animations
-- [ ] Phase 7 — Real-time (WebSocket), optimistic updates
+- [x] Phase 6 — Command palette, keyboard shortcuts, search, animations
+- [x] Phase 7 — Real-time (WebSocket), optimistic updates
 - [ ] Phase 8 — Analytics, performance, virtualization
 - [ ] Phase 9 — 3D accents, advanced animations, empty/loading states
 - [ ] Phase 10 — Tests, CI, docs, final cleanup

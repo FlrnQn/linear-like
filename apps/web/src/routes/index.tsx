@@ -1,15 +1,17 @@
 import { cn } from '@lynx/shared'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect } from 'react'
 
 import { useLogout } from '@/features/auth/use-logout'
 import { CreateProjectForm } from '@/features/projects/create-project-form'
 import { useProjects } from '@/features/projects/use-projects'
+import { useWorkspaceRealtime } from '@/features/realtime/use-workspace-realtime'
 import { CreateTeamForm } from '@/features/teams/create-team-form'
 import { useTeams } from '@/features/teams/use-teams'
 import { CreateWorkspaceForm } from '@/features/workspaces/create-workspace-form'
 import { useWorkspaces } from '@/features/workspaces/use-workspaces'
 import { useAuthStore } from '@/stores/auth-store'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 
 export const Route = createFileRoute('/')({
   beforeLoad: ({ context, location }) => {
@@ -24,11 +26,20 @@ function HomePage() {
   const user = useAuthStore((state) => state.user)
   const workspaces = useWorkspaces()
   const logout = useLogout()
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | undefined>()
+  const activeWorkspaceId = useWorkspaceStore((state) => state.activeWorkspaceId ?? undefined)
+  const setActiveWorkspaceId = useWorkspaceStore((state) => state.setActiveWorkspaceId)
 
-  const activeWorkspaceId = selectedWorkspaceId ?? workspaces.data?.[0]?.id
+  useEffect(() => {
+    if (!activeWorkspaceId && workspaces.data && workspaces.data.length > 0) {
+      const first = workspaces.data[0]
+      if (first) setActiveWorkspaceId(first.id)
+    }
+  }, [activeWorkspaceId, workspaces.data, setActiveWorkspaceId])
+
   const teams = useTeams(activeWorkspaceId)
   const projects = useProjects(activeWorkspaceId)
+
+  useWorkspaceRealtime(activeWorkspaceId)
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-6 py-16">
@@ -65,7 +76,7 @@ function HomePage() {
               <button
                 key={workspace.id}
                 type="button"
-                onClick={() => setSelectedWorkspaceId(workspace.id)}
+                onClick={() => setActiveWorkspaceId(workspace.id)}
                 className={cn(
                   'rounded-lg border px-3 py-1.5 text-sm transition-colors',
                   workspace.id === activeWorkspaceId
@@ -115,15 +126,18 @@ function HomePage() {
             ) : projects.data && projects.data.length > 0 ? (
               <ul className="mb-4 flex flex-col gap-2">
                 {projects.data.map((project) => (
-                  <li
-                    key={project.id}
-                    className="border-border flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
-                  >
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: project.color ?? '#94a3b8' }}
-                    />
-                    <span>{project.name}</span>
+                  <li key={project.id}>
+                    <Link
+                      to="/projects/$projectId"
+                      params={{ projectId: project.id }}
+                      className="border-border hover:border-accent flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
+                    >
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: project.color ?? '#94a3b8' }}
+                      />
+                      <span>{project.name}</span>
+                    </Link>
                   </li>
                 ))}
               </ul>

@@ -3,6 +3,7 @@ import { asc, eq } from 'drizzle-orm'
 
 import { db } from '../../db/client'
 import { activities, comments } from '../../db/schema'
+import { publishWorkspaceEvent } from '../../websocket/events'
 import { toPublicComment } from './comments.mapper'
 
 export async function createComment(
@@ -33,7 +34,16 @@ export async function createComment(
     with: { author: true },
   })
   if (!created) throw new Error('Failed to load created comment')
-  return toPublicComment(created)
+
+  const comment = toPublicComment(created)
+  await publishWorkspaceEvent({
+    type: 'comment.created',
+    workspaceId,
+    actorId: authorId,
+    comment,
+  })
+
+  return comment
 }
 
 export async function listCommentsForIssue(issueId: string) {

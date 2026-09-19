@@ -21,6 +21,7 @@
     "@fastify/cors": "^10.0.2",
     "@fastify/jwt": "^10.2.2",
     "@fastify/sensible": "^6.0.2",
+    "@fastify/websocket": "^11.3.1",
     "@lynx/types": "workspace:*",
     "argon2": "^0.45.1",
     "dotenv": "^16.4.7",
@@ -28,6 +29,7 @@
     "fastify": "^5.2.1",
     "ioredis": "^5.4.2",
     "pg": "^8.13.1",
+    "ws": "^8.21.3",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -35,6 +37,7 @@
     "@lynx/config": "workspace:*",
     "@types/node": "^22.10.10",
     "@types/pg": "^8.11.11",
+    "@types/ws": "^8.18.1",
     "drizzle-kit": "^0.31.10",
     "pino-pretty": "^13.0.0",
     "tsx": "^4.19.2",

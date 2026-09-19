@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../../db/client'
 import { activities, cycles, issueLabels, issues, projects, teams } from '../../db/schema'
 import { NotFoundError } from '../../lib/errors'
+import { publishWorkspaceEvent } from '../../websocket/events'
 import { toPublicIssue } from './issues.mapper'
 
 const issueRelations = {
@@ -47,17 +48,19 @@ export async function getIssueById(id: string) {
   return row ? toPublicIssue(row) : null
 }
 
-export async function listIssuesForTeam(
-  teamId: string,
-  filters: {
-    status?: string
-    assigneeId?: string
-    cycleId?: string
-    limit: number
-    offset: number
-  },
+interface IssueListFilters {
+  status?: string
+  assigneeId?: string
+  cycleId?: string
+  limit: number
+  offset: number
+}
+
+async function listIssuesWhere(
+  scopeCondition: NonNullable<Parameters<typeof and>[0]>,
+  filters: IssueListFilters,
 ) {
-  const conditions = [eq(issues.teamId, teamId)]
+  const conditions = [scopeCondition]
   if (filters.status) conditions.push(eq(issues.status, filters.status as never))
   if (filters.assigneeId) conditions.push(eq(issues.assigneeId, filters.assigneeId))
   if (filters.cycleId) conditions.push(eq(issues.cycleId, filters.cycleId))
@@ -71,6 +74,14 @@ export async function listIssuesForTeam(
   })
 
   return rows.map(toPublicIssue)
+}
+
+export async function listIssuesForTeam(teamId: string, filters: IssueListFilters) {
+  return listIssuesWhere(eq(issues.teamId, teamId), filters)
+}
+
+export async function listIssuesForProject(projectId: string, filters: IssueListFilters) {
+  return listIssuesWhere(eq(issues.projectId, projectId), filters)
 }
 
 export async function createIssue(
@@ -126,6 +137,14 @@ export async function createIssue(
 
   const created = await getIssueById(issueId)
   if (!created) throw new Error('Failed to load created issue')
+
+  await publishWorkspaceEvent({
+    type: 'issue.created',
+    workspaceId: team.workspaceId,
+    actorId: creatorId,
+    issue: created,
+  })
+
   return created
 }
 
@@ -233,6 +252,14 @@ export async function updateIssue(
 
   const updated = await getIssueById(issueId)
   if (!updated) throw new Error('Failed to load updated issue')
+
+  await publishWorkspaceEvent({
+    type: 'issue.updated',
+    workspaceId,
+    actorId,
+    issue: updated,
+  })
+
   return updated
 }
 
@@ -252,5 +279,12 @@ export async function deleteIssue(issueId: string, actorId: string, workspaceId:
       metadata: { identifier: `${existing.team.key}-${existing.number}`, title: existing.title },
     })
     await tx.delete(issues).where(eq(issues.id, issueId))
+  })
+
+  await publishWorkspaceEvent({
+    type: 'issue.deleted',
+    workspaceId,
+    actorId,
+    issueId,
   })
 }

@@ -3,14 +3,17 @@ import type { CreateIssueInput, Issue, IssueStatus, UpdateIssueInput } from '@ly
 import { apiFetch } from '@/lib/api-client'
 
 export interface ListIssuesParams {
-  teamId: string
+  teamId?: string
+  projectId?: string
   status?: IssueStatus
   assigneeId?: string
   cycleId?: string
 }
 
 export function listIssues(params: ListIssuesParams) {
-  const search = new URLSearchParams({ teamId: params.teamId })
+  const search = new URLSearchParams()
+  if (params.teamId) search.set('teamId', params.teamId)
+  if (params.projectId) search.set('projectId', params.projectId)
   if (params.status) search.set('status', params.status)
   if (params.assigneeId) search.set('assigneeId', params.assigneeId)
   if (params.cycleId) search.set('cycleId', params.cycleId)

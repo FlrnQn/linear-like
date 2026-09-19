@@ -2,6 +2,7 @@ import type { Issue, UpdateIssueInput } from '@lynx/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { activitiesQueryKey } from '@/features/activities/use-activities'
+import { useToastStore } from '@/stores/toast-store'
 
 import { updateIssue } from './api'
 import { issueQueryKey } from './use-issue'
@@ -69,6 +70,7 @@ export function useUpdateIssue() {
       context?.previousLists.forEach(([key, data]) => {
         queryClient.setQueryData(key, data)
       })
+      useToastStore.getState().push('Failed to update issue — changes reverted', 'error')
     },
     onSettled: (_data, _error, { issueId }) => {
       void queryClient.invalidateQueries({ queryKey: issueQueryKey(issueId) })

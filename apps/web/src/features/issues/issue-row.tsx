@@ -1,11 +1,17 @@
 import type { Issue } from '@lynx/types'
 import { cn } from '@lynx/shared'
+import { motion } from 'motion/react'
 
 import { PRIORITY_LABELS, STATUS_DOT_COLORS } from './status-priority'
 
 export function IssueRow({ issue, onClick }: { issue: Issue; onClick: () => void }) {
   return (
-    <button
+    <motion.button
+      layout
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       type="button"
       onClick={onClick}
       className="border-border hover:border-accent flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors"
@@ -37,6 +43,6 @@ export function IssueRow({ issue, onClick }: { issue: Issue; onClick: () => void
       <span className="text-muted-foreground w-24 shrink-0 truncate text-xs">
         {issue.assignee?.name ?? 'Unassigned'}
       </span>
-    </button>
+    </motion.button>
   )
 }
