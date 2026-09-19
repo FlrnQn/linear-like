@@ -18,7 +18,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "db:generate": "pnpm --filter @lynx/api db:generate",
+    "db:migrate": "pnpm --filter @lynx/api db:migrate",
+    "db:seed": "pnpm --filter @lynx/api db:seed",
+    "db:studio": "pnpm --filter @lynx/api db:studio"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
