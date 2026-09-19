@@ -1,8 +1,9 @@
 import type { IssuePriority } from '@lynx/types'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { Check, ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
-import { ISSUE_PRIORITIES, PRIORITY_LABELS } from './status-priority'
+import { ISSUE_PRIORITIES, PRIORITY_LABEL_KEYS } from './status-priority'
 
 export function PrioritySelect({
   value,
@@ -11,10 +12,12 @@ export function PrioritySelect({
   value: IssuePriority
   onChange: (priority: IssuePriority) => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <SelectPrimitive.Root value={value} onValueChange={(next) => onChange(next as IssuePriority)}>
       <SelectPrimitive.Trigger
-        aria-label="Priority"
+        aria-label={t('issue.fields.priority')}
         className="border-border bg-background focus:border-accent inline-flex items-center gap-2 rounded-md border px-2 py-1 text-sm outline-none"
       >
         <SelectPrimitive.Value />
@@ -39,7 +42,7 @@ export function PrioritySelect({
                 value={priority}
                 className="data-[highlighted]:bg-background flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none"
               >
-                <SelectPrimitive.ItemText>{PRIORITY_LABELS[priority]}</SelectPrimitive.ItemText>
+                <SelectPrimitive.ItemText>{t(PRIORITY_LABEL_KEYS[priority])}</SelectPrimitive.ItemText>
                 <SelectPrimitive.ItemIndicator className="ml-auto">
                   <Check className="h-3.5 w-3.5" />
                 </SelectPrimitive.ItemIndicator>

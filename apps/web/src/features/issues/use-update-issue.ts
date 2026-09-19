@@ -1,5 +1,6 @@
 import type { Issue, UpdateIssueInput } from '@lynx/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { activitiesQueryKey } from '@/features/activities/use-activities'
 import { useToastStore } from '@/stores/toast-store'
@@ -35,6 +36,7 @@ function patchIssue(issue: Issue, input: UpdateIssueInput): Issue {
 
 export function useUpdateIssue() {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
 
   return useMutation<Issue, Error, UpdateIssueVars, UpdateIssueContext>({
     mutationFn: ({ issueId, input }) => updateIssue(issueId, input),
@@ -73,7 +75,7 @@ export function useUpdateIssue() {
       context?.previousLists.forEach(([key, data]) => {
         queryClient.setQueryData(key, data)
       })
-      useToastStore.getState().push('Failed to update issue — changes reverted', 'error')
+      useToastStore.getState().push(t('issue.updateFailed'), 'error')
     },
     onSettled: (_data, _error, { issueId }) => {
       void queryClient.invalidateQueries({ queryKey: issueQueryKey(issueId) })

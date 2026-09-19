@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
 import { Skeleton } from '@/components/skeleton'
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/projects/$projectId')({
 })
 
 function ProjectIssuesPage() {
+  const { t } = useTranslation()
   const { projectId } = Route.useParams()
   const { issue: issueFromSearch } = Route.useSearch()
   const project = useProject(projectId)
@@ -49,7 +51,7 @@ function ProjectIssuesPage() {
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-16">
       <header>
         <Link to="/" className="text-muted-foreground hover:text-foreground text-xs">
-          ← Back
+          ← {t('common.back')}
         </Link>
         <div className="mt-1 flex items-center gap-2">
           <span

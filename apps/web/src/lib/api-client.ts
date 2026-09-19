@@ -1,3 +1,4 @@
+import { i18n } from '@/i18n'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { API_URL } from './api'
@@ -71,7 +72,7 @@ export async function apiFetch<T>(
     const body: ErrorBody | null = await response.json().catch(() => null)
     throw new ApiError(
       response.status,
-      body?.error?.message ?? 'Request failed',
+      body?.error?.message ?? i18n.t('api.requestFailed'),
       body?.error?.issues,
     )
   }

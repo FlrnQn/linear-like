@@ -2,8 +2,9 @@ import type { IssueStatus } from '@lynx/types'
 import { cn } from '@lynx/shared'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { Check, ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
-import { ISSUE_STATUSES, STATUS_DOT_COLORS, STATUS_LABELS } from './status-priority'
+import { ISSUE_STATUSES, STATUS_DOT_COLORS, STATUS_LABEL_KEYS } from './status-priority'
 
 export function StatusSelect({
   value,
@@ -12,10 +13,12 @@ export function StatusSelect({
   value: IssueStatus
   onChange: (status: IssueStatus) => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <SelectPrimitive.Root value={value} onValueChange={(next) => onChange(next as IssueStatus)}>
       <SelectPrimitive.Trigger
-        aria-label="Status"
+        aria-label={t('issue.fields.status')}
         className="border-border bg-background focus:border-accent inline-flex items-center gap-2 rounded-md border px-2 py-1 text-sm outline-none"
       >
         <span
@@ -49,7 +52,7 @@ export function StatusSelect({
                 className="data-[highlighted]:bg-background flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none"
               >
                 <span className={cn('h-2 w-2 shrink-0 rounded-full', STATUS_DOT_COLORS[status])} />
-                <SelectPrimitive.ItemText>{STATUS_LABELS[status]}</SelectPrimitive.ItemText>
+                <SelectPrimitive.ItemText>{t(STATUS_LABEL_KEYS[status])}</SelectPrimitive.ItemText>
                 <SelectPrimitive.ItemIndicator className="ml-auto">
                   <Check className="h-3.5 w-3.5" />
                 </SelectPrimitive.ItemIndicator>

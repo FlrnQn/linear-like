@@ -4,6 +4,7 @@ import { cn } from '@lynx/shared'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/components/empty-state'
 import { Skeleton } from '@/components/skeleton'
@@ -11,7 +12,7 @@ import { Skeleton } from '@/components/skeleton'
 import type { ListIssuesParams } from './api'
 import { IssueRow } from './issue-row'
 import { KanbanBoard } from './kanban-board'
-import { STATUS_LABELS } from './status-priority'
+import { STATUS_LABEL_KEYS } from './status-priority'
 import { useInfiniteIssues, useIssues } from './use-issues'
 
 type StatusFilter = IssueStatus | 'ALL'
@@ -31,6 +32,7 @@ export function IssueBoard({
   onSelectIssue: (issueId: string) => void
   extraFilters?: ReactNode
 }) {
+  const { t } = useTranslation()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [view, setView] = useState<ViewMode>('list')
 
@@ -80,7 +82,7 @@ export function IssueBoard({
               view === 'list' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
             )}
           >
-            List
+            {t('issue.board.list')}
           </button>
           <button
             type="button"
@@ -90,7 +92,7 @@ export function IssueBoard({
               view === 'kanban' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
             )}
           >
-            Kanban
+            {t('issue.board.kanban')}
           </button>
         </div>
 
@@ -106,7 +108,7 @@ export function IssueBoard({
                 statusFilter === 'ALL' ? 'text-foreground font-medium' : 'text-muted-foreground',
               )}
             >
-              All
+              {t('issue.board.all')}
             </button>
             {ISSUE_STATUSES.map((status) => (
               <button
@@ -118,7 +120,7 @@ export function IssueBoard({
                   statusFilter === status ? 'text-foreground font-medium' : 'text-muted-foreground',
                 )}
               >
-                {STATUS_LABELS[status]}
+                {t(STATUS_LABEL_KEYS[status])}
               </button>
             ))}
           </div>
@@ -163,8 +165,8 @@ export function IssueBoard({
         ) : (
           <EmptyState
             scene
-            title="No issues yet"
-            description="Create the first issue to get this team moving."
+            title={t('issue.board.emptyTitle')}
+            description={t('issue.board.emptyDescription')}
           />
         )
       ) : kanbanIssues.isLoading ? (
@@ -181,8 +183,7 @@ export function IssueBoard({
         <>
           {kanbanIssues.data?.nextCursor && (
             <p className="text-muted-foreground text-xs">
-              Showing the first {kanbanIssues.data.items.length} issues — narrow with a cycle or
-              team filter to see the rest.
+              {t('issue.board.showingFirst', { count: kanbanIssues.data.items.length })}
             </p>
           )}
           <KanbanBoard issues={kanbanIssues.data?.items ?? []} onSelectIssue={onSelectIssue} />

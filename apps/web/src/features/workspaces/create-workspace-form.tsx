@@ -1,6 +1,7 @@
 import { createWorkspaceSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
 import { useId, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -15,6 +16,7 @@ function slugify(value: string) {
 }
 
 export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
+  const { t } = useTranslation()
   const createWorkspace = useCreateWorkspace()
   const slugTouched = useRef(false)
   const id = useId()
@@ -43,7 +45,7 @@ export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
         {(field) => (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
-              Workspace name
+              {t('workspaces.nameLabel')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -69,7 +71,7 @@ export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
         {(field) => (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
-              Slug
+              {t('workspaces.slugLabel')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -93,7 +95,7 @@ export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
         <p className="text-sm text-red-500">
           {createWorkspace.error instanceof ApiError
             ? createWorkspace.error.message
-            : 'Something went wrong'}
+            : t('common.somethingWentWrong')}
         </p>
       )}
 
@@ -104,7 +106,7 @@ export function CreateWorkspaceForm({ onSuccess }: { onSuccess: () => void }) {
             disabled={!canSubmit || isSubmitting}
             className="bg-accent text-accent-foreground mt-2 rounded-lg px-3 py-2 text-sm font-medium transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? 'Creating…' : 'Create workspace'}
+            {isSubmitting ? t('common.creating') : t('workspaces.submit')}
           </button>
         )}
       </form.Subscribe>

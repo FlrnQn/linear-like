@@ -7,6 +7,7 @@ import { commentsQueryKey } from '@/features/comments/use-comments'
 import { mapCachedIssues } from '@/features/issues/issues-cache'
 import { issueQueryKey } from '@/features/issues/use-issue'
 import { projectsQueryKey } from '@/features/projects/use-projects'
+import { i18n } from '@/i18n'
 import { API_URL } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { useToastStore } from '@/stores/toast-store'
@@ -40,7 +41,11 @@ export function useWorkspaceRealtime(workspaceId: string | undefined) {
       switch (event.type) {
         case 'issue.created': {
           void queryClient.invalidateQueries({ queryKey: ['issues'] })
-          if (!isSelf) useToastStore.getState().push(`${event.issue.identifier} created`)
+          if (!isSelf) {
+            useToastStore
+              .getState()
+              .push(i18n.t('realtime.issueCreated', { identifier: event.issue.identifier }))
+          }
           break
         }
         case 'issue.updated': {
@@ -59,13 +64,17 @@ export function useWorkspaceRealtime(workspaceId: string | undefined) {
               }
             })
           void queryClient.invalidateQueries({ queryKey: activitiesQueryKey(event.issue.id) })
-          if (!isSelf) useToastStore.getState().push(`${event.issue.identifier} updated`)
+          if (!isSelf) {
+            useToastStore
+              .getState()
+              .push(i18n.t('realtime.issueUpdated', { identifier: event.issue.identifier }))
+          }
           break
         }
         case 'issue.deleted': {
           queryClient.removeQueries({ queryKey: issueQueryKey(event.issueId) })
           void queryClient.invalidateQueries({ queryKey: ['issues'] })
-          if (!isSelf) useToastStore.getState().push('An issue was deleted')
+          if (!isSelf) useToastStore.getState().push(i18n.t('realtime.issueDeletedToast'))
           break
         }
         case 'comment.created': {
@@ -73,7 +82,7 @@ export function useWorkspaceRealtime(workspaceId: string | undefined) {
           void queryClient.invalidateQueries({
             queryKey: activitiesQueryKey(event.comment.issueId),
           })
-          if (!isSelf) useToastStore.getState().push('New comment posted')
+          if (!isSelf) useToastStore.getState().push(i18n.t('realtime.commentPosted'))
           break
         }
         case 'project.updated': {

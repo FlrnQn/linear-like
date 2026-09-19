@@ -1,10 +1,13 @@
 import type { Comment } from '@lynx/types'
+import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/components/empty-state'
 
 export function CommentList({ comments }: { comments: Comment[] }) {
+  const { t } = useTranslation()
+
   if (comments.length === 0) {
-    return <EmptyState title="No comments yet." compact />
+    return <EmptyState title={t('comments.empty')} compact />
   }
 
   return (

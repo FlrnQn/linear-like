@@ -1,6 +1,7 @@
 import { createProjectSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
 import { useId } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -13,6 +14,7 @@ export function CreateProjectForm({
   workspaceId: string
   onSuccess: () => void
 }) {
+  const { t } = useTranslation()
   const createProject = useCreateProject(workspaceId)
   const id = useId()
 
@@ -45,7 +47,7 @@ export function CreateProjectForm({
         {(field) => (
           <div className="flex flex-col gap-1">
             <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
-              Project name
+              {t('projects.nameLabel')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -76,10 +78,10 @@ export function CreateProjectForm({
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting || name.trim().length === 0}
-            aria-label="Add project"
+            aria-label={t('projects.addAriaLabel')}
             className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-sm font-medium transition-opacity disabled:opacity-50"
           >
-            Add
+            {t('common.add')}
           </button>
         )}
       </form.Subscribe>
@@ -88,7 +90,7 @@ export function CreateProjectForm({
         <p className="text-xs text-red-500">
           {createProject.error instanceof ApiError
             ? createProject.error.message
-            : 'Something went wrong'}
+            : t('common.somethingWentWrong')}
         </p>
       )}
     </form>

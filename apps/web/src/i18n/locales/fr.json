@@ -1,0 +1,209 @@
+{
+  "common": {
+    "back": "Retour",
+    "cancel": "Annuler",
+    "add": "Ajouter",
+    "creating": "Création…",
+    "unassigned": "Non assigné",
+    "noProject": "Aucun projet",
+    "noCycle": "Aucun cycle",
+    "somethingWentWrong": "Une erreur est survenue",
+    "close": "Fermer",
+    "loading": "Chargement…"
+  },
+  "auth": {
+    "name": "Nom",
+    "email": "Email",
+    "password": "Mot de passe",
+    "signIn": "Se connecter",
+    "signingIn": "Connexion…",
+    "signOut": "Se déconnecter",
+    "createAccount": "Créer un compte",
+    "creatingAccount": "Création du compte…",
+    "welcomeBack": "Content de vous revoir",
+    "signInSubtitle": "Connectez-vous à votre espace LYNX.",
+    "noAccount": "Pas de compte ?",
+    "createOne": "Créez-en un",
+    "createYourAccount": "Créez votre compte",
+    "createAccountSubtitle": "Démarrez votre espace LYNX en quelques secondes.",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?"
+  },
+  "sidebar": {
+    "expandSidebar": "Déplier la barre latérale",
+    "collapseSidebar": "Replier la barre latérale",
+    "search": "Rechercher…",
+    "home": "Accueil",
+    "teams": "Équipes",
+    "projects": "Projets",
+    "settings": "Réglages",
+    "switchLanguage": "Passer en {{language}}"
+  },
+  "settings": {
+    "title": "Réglages",
+    "profile": "Profil",
+    "name": "Nom",
+    "email": "Email",
+    "appearance": "Apparence",
+    "light": "Clair",
+    "dark": "Sombre",
+    "language": "Langue",
+    "languageEnglish": "English",
+    "languageFrench": "Français"
+  },
+  "activity": {
+    "createdIssue": "a créé ce ticket",
+    "statusChanged": "a changé le statut de {{from}} à {{to}}",
+    "priorityChanged": "a changé la priorité de {{from}} à {{to}}",
+    "assigned": "a assigné ce ticket",
+    "unassigned": "a désassigné ce ticket",
+    "labelsAdded": "a ajouté des labels",
+    "labelsRemoved": "a retiré des labels",
+    "issueDeleted": "a supprimé ce ticket",
+    "commentLeft": "a laissé un commentaire",
+    "projectUpdated": "a mis à jour le projet",
+    "cycleUpdated": "a mis à jour le cycle",
+    "empty": "Aucune activité pour l'instant."
+  },
+  "commandPalette": {
+    "title": "Menu de commandes",
+    "searchPlaceholder": "Rechercher un ticket, aller à une équipe ou un projet…",
+    "noResults": "Aucun résultat.",
+    "issuesGroup": "Tickets",
+    "navigationGroup": "Navigation",
+    "home": "Accueil",
+    "goToTeam": "Aller à {{name}}",
+    "goToProject": "Aller à {{name}}",
+    "openSettings": "Ouvrir les réglages",
+    "actionsGroup": "Actions",
+    "switchToLight": "Passer en mode clair",
+    "switchToDark": "Passer en mode sombre",
+    "navigate": "naviguer",
+    "select": "sélectionner",
+    "close": "fermer"
+  },
+  "comments": {
+    "placeholder": "Ajouter un commentaire…",
+    "posting": "Envoi…",
+    "submit": "Commenter",
+    "empty": "Aucun commentaire pour l'instant."
+  },
+  "cycles": {
+    "nameLabel": "Nom du cycle",
+    "start": "Début",
+    "end": "Fin"
+  },
+  "dashboard": {
+    "totalIssues": "Total des tickets",
+    "inProgress": "En cours",
+    "completed": "Terminés",
+    "projects": "Projets",
+    "issueCount_one": "{{count}} ticket",
+    "issueCount_other": "{{count}} tickets",
+    "chartTitle": "Tickets créés, 30 derniers jours"
+  },
+  "issue": {
+    "fields": {
+      "status": "Statut",
+      "priority": "Priorité",
+      "assignee": "Assigné",
+      "project": "Projet",
+      "cycle": "Cycle",
+      "createdBy": "Créé par"
+    },
+    "status": {
+      "backlog": "Backlog",
+      "todo": "À faire",
+      "inProgress": "En cours",
+      "inReview": "En revue",
+      "done": "Terminé",
+      "canceled": "Annulé"
+    },
+    "priority": {
+      "none": "Sans priorité",
+      "low": "Basse",
+      "medium": "Moyenne",
+      "high": "Haute",
+      "urgent": "Urgente"
+    },
+    "form": {
+      "titlePlaceholder": "Titre du ticket",
+      "descriptionPlaceholder": "Description (optionnel)",
+      "submit": "Créer le ticket"
+    },
+    "board": {
+      "list": "Liste",
+      "kanban": "Kanban",
+      "all": "Tous",
+      "emptyTitle": "Aucun ticket pour l'instant",
+      "emptyDescription": "Créez le premier ticket pour lancer cette équipe.",
+      "showingFirst": "Affichage des {{count}} premiers tickets — filtrez par cycle ou équipe pour voir le reste."
+    },
+    "detail": {
+      "fallbackTitle": "Ticket",
+      "description": "Détails, activité et commentaires de ce ticket",
+      "titleAriaLabel": "Titre du ticket",
+      "descriptionAriaLabel": "Description du ticket",
+      "descriptionPlaceholder": "Ajouter une description…",
+      "activity": "Activité",
+      "comments": "Commentaires",
+      "delete": "Supprimer le ticket"
+    },
+    "updateFailed": "Échec de la mise à jour du ticket — modifications annulées"
+  },
+  "projects": {
+    "nameLabel": "Nom du projet",
+    "addAriaLabel": "Ajouter un projet"
+  },
+  "realtime": {
+    "issueCreated": "{{identifier}} créé",
+    "issueUpdated": "{{identifier}} mis à jour",
+    "issueDeletedToast": "Un ticket a été supprimé",
+    "commentPosted": "Nouveau commentaire publié"
+  },
+  "teams": {
+    "nameLabel": "Nom de l'équipe",
+    "keyLabel": "Clé",
+    "keyPlaceholder": "ENG",
+    "addAriaLabel": "Ajouter une équipe"
+  },
+  "workspaces": {
+    "nameLabel": "Nom de l'espace de travail",
+    "slugLabel": "Identifiant (slug)",
+    "submit": "Créer l'espace de travail"
+  },
+  "app": {
+    "crashTitle": "Une erreur est survenue",
+    "crashDescription": "Essayez de recharger la page. Si le problème persiste, le contenu d'un formulaire ouvert pourrait ne pas être conservé.",
+    "reload": "Recharger"
+  },
+  "home": {
+    "welcomeBack": "Content de vous revoir, {{name}}",
+    "createFirstWorkspaceTitle": "Créez votre premier espace de travail",
+    "createFirstWorkspaceDescription": "Un espace de travail regroupe vos équipes, projets et tickets.",
+    "teamsHeading": "Équipes",
+    "noTeamsTitle": "Aucune équipe pour l'instant",
+    "noTeamsDescription": "Créez une équipe pour commencer à organiser tickets et cycles.",
+    "projectsHeading": "Projets",
+    "noProjectsTitle": "Aucun projet pour l'instant",
+    "noProjectsDescription": "Créez un projet pour regrouper des tickets liés."
+  },
+  "login": {
+    "title": "Content de vous revoir",
+    "subtitle": "Connectez-vous à votre espace LYNX."
+  },
+  "signup": {
+    "title": "Créez votre compte",
+    "subtitle": "Démarrez votre espace LYNX en quelques secondes."
+  },
+  "teamPage": {
+    "newIssue": "Nouveau ticket",
+    "cyclesHeading": "Cycles",
+    "newCycle": "+ Nouveau cycle",
+    "noCyclesYet": "Aucun cycle pour l'instant.",
+    "filterByCycle": "Filtrer par cycle",
+    "allCycles": "Tous les cycles"
+  },
+  "api": {
+    "requestFailed": "Échec de la requête"
+  }
+}

@@ -2,10 +2,13 @@ import type { Issue } from '@lynx/types'
 import { cn } from '@lynx/shared'
 import { motion } from 'motion/react'
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { PRIORITY_LABELS, STATUS_DOT_COLORS } from './status-priority'
+import { PRIORITY_LABEL_KEYS, STATUS_DOT_COLORS } from './status-priority'
 
 function IssueRowImpl({ issue, onClick }: { issue: Issue; onClick: () => void }) {
+  const { t } = useTranslation()
+
   return (
     <motion.button
       initial={{ opacity: 0 }}
@@ -40,12 +43,12 @@ function IssueRowImpl({ issue, onClick }: { issue: Issue; onClick: () => void })
 
       {issue.priority !== 'NO_PRIORITY' && (
         <span className="text-muted-foreground hidden shrink-0 text-xs sm:inline">
-          {PRIORITY_LABELS[issue.priority]}
+          {t(PRIORITY_LABEL_KEYS[issue.priority])}
         </span>
       )}
 
       <span className="text-muted-foreground w-24 shrink-0 truncate text-xs">
-        {issue.assignee?.name ?? 'Unassigned'}
+        {issue.assignee?.name ?? t('common.unassigned')}
       </span>
     </motion.button>
   )

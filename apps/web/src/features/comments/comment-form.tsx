@@ -1,9 +1,11 @@
 import { createCommentSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
+import { useTranslation } from 'react-i18next'
 
 import { useCreateComment } from './use-create-comment'
 
 export function CommentForm({ issueId }: { issueId: string }) {
+  const { t } = useTranslation()
   const createComment = useCreateComment(issueId)
 
   const form = useForm({
@@ -26,7 +28,7 @@ export function CommentForm({ issueId }: { issueId: string }) {
       <form.Field name="body">
         {(field) => (
           <textarea
-            placeholder="Add a comment…"
+            placeholder={t('comments.placeholder')}
             rows={2}
             value={field.state.value}
             onChange={(e) => field.handleChange(e.target.value)}
@@ -42,7 +44,7 @@ export function CommentForm({ issueId }: { issueId: string }) {
             disabled={isSubmitting || body.trim().length === 0}
             className="bg-accent text-accent-foreground self-start rounded-lg px-3 py-1.5 text-sm font-medium transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? 'Posting…' : 'Comment'}
+            {isSubmitting ? t('comments.posting') : t('comments.submit')}
           </button>
         )}
       </form.Subscribe>

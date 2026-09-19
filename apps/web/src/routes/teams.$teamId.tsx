@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
 import { EmptyState } from '@/components/empty-state'
@@ -28,6 +29,7 @@ export const Route = createFileRoute('/teams/$teamId')({
 })
 
 function TeamIssuesPage() {
+  const { t } = useTranslation()
   const { teamId } = Route.useParams()
   const { issue: issueFromSearch } = Route.useSearch()
   const team = useTeam(teamId)
@@ -59,7 +61,7 @@ function TeamIssuesPage() {
       <header className="flex items-center justify-between">
         <div>
           <Link to="/" className="text-muted-foreground hover:text-foreground text-xs">
-            ← Back
+            ← {t('common.back')}
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">{team.data.name}</h1>
           <p className="text-muted-foreground text-sm">{team.data.key}</p>
@@ -69,7 +71,7 @@ function TeamIssuesPage() {
           onClick={() => setShowCreateForm((v) => !v)}
           className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-sm font-medium"
         >
-          {showCreateForm ? 'Cancel' : 'New issue'}
+          {showCreateForm ? t('common.cancel') : t('teamPage.newIssue')}
         </button>
       </header>
 
@@ -83,13 +85,13 @@ function TeamIssuesPage() {
 
       <section className="border-border bg-surface rounded-xl border p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium">Cycles</h2>
+          <h2 className="text-sm font-medium">{t('teamPage.cyclesHeading')}</h2>
           <button
             type="button"
             onClick={() => setShowCreateCycle((v) => !v)}
             className="text-muted-foreground hover:text-foreground text-xs"
           >
-            {showCreateCycle ? 'Cancel' : '+ New cycle'}
+            {showCreateCycle ? t('common.cancel') : t('teamPage.newCycle')}
           </button>
         </div>
         {showCreateCycle && (
@@ -109,7 +111,7 @@ function TeamIssuesPage() {
             ))}
           </div>
         ) : (
-          <EmptyState title="No cycles yet." compact />
+          <EmptyState title={t('teamPage.noCyclesYet')} compact />
         )}
       </section>
 
@@ -118,12 +120,12 @@ function TeamIssuesPage() {
         onSelectIssue={setSelectedIssueId}
         extraFilters={
           <select
-            aria-label="Filter by cycle"
+            aria-label={t('teamPage.filterByCycle')}
             value={cycleFilter}
             onChange={(e) => setCycleFilter(e.target.value)}
             className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
           >
-            <option value="">All cycles</option>
+            <option value="">{t('teamPage.allCycles')}</option>
             {cycles.data?.map((cycle) => (
               <option key={cycle.id} value={cycle.id}>
                 {cycle.name}

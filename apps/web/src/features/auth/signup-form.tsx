@@ -1,12 +1,14 @@
 import { signupSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
 import { useId } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '@/lib/api-client'
 
 import { useSignup } from './use-signup'
 
 export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
+  const { t } = useTranslation()
   const signup = useSignup()
   const id = useId()
 
@@ -38,7 +40,7 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
         {(field) => (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
-              Name
+              {t('auth.name')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -60,7 +62,7 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
         {(field) => (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
-              Email
+              {t('auth.email')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -82,7 +84,7 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
         {(field) => (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
-              Password
+              {t('auth.password')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -102,7 +104,7 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
 
       {signup.isError && (
         <p className="text-sm text-red-500">
-          {signup.error instanceof ApiError ? signup.error.message : 'Something went wrong'}
+          {signup.error instanceof ApiError ? signup.error.message : t('common.somethingWentWrong')}
         </p>
       )}
 
@@ -113,7 +115,7 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
             disabled={!canSubmit || isSubmitting}
             className="bg-accent text-accent-foreground mt-2 rounded-lg px-3 py-2 text-sm font-medium transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? 'Creating account…' : 'Create account'}
+            {isSubmitting ? t('auth.creatingAccount') : t('auth.createAccount')}
           </button>
         )}
       </form.Subscribe>

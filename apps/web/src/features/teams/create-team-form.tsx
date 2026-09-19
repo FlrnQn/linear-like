@@ -1,6 +1,7 @@
 import { createTeamSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
 import { useId } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '@/lib/api-client'
 
@@ -13,6 +14,7 @@ export function CreateTeamForm({
   workspaceId: string
   onSuccess: () => void
 }) {
+  const { t } = useTranslation()
   const createTeam = useCreateTeam(workspaceId)
   const id = useId()
 
@@ -40,7 +42,7 @@ export function CreateTeamForm({
         {(field) => (
           <div className="flex flex-col gap-1">
             <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
-              Team name
+              {t('teams.nameLabel')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -57,12 +59,12 @@ export function CreateTeamForm({
         {(field) => (
           <div className="flex w-20 flex-col gap-1">
             <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
-              Key
+              {t('teams.keyLabel')}
             </label>
             <input
               id={`${id}-${field.name}`}
               type="text"
-              placeholder="ENG"
+              placeholder={t('teams.keyPlaceholder')}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               className="border-border bg-background focus:border-accent rounded-lg border px-2 py-1.5 text-sm uppercase outline-none"
@@ -76,17 +78,19 @@ export function CreateTeamForm({
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
-            aria-label="Add team"
+            aria-label={t('teams.addAriaLabel')}
             className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-sm font-medium transition-opacity disabled:opacity-50"
           >
-            Add
+            {t('common.add')}
           </button>
         )}
       </form.Subscribe>
 
       {createTeam.isError && (
         <p className="text-xs text-red-500">
-          {createTeam.error instanceof ApiError ? createTeam.error.message : 'Something went wrong'}
+          {createTeam.error instanceof ApiError
+            ? createTeam.error.message
+            : t('common.somethingWentWrong')}
         </p>
       )}
     </form>

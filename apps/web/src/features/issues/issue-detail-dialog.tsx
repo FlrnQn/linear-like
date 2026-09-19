@@ -2,6 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ActivityFeed } from '@/features/activities/activity-feed'
 import { useActivities } from '@/features/activities/use-activities'
@@ -27,6 +28,7 @@ export function IssueDetailDialog({
   workspaceId: string
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const issue = useIssue(issueId)
   const comments = useComments(issueId)
   const activities = useActivities(issueId)
@@ -81,24 +83,24 @@ export function IssueDetailDialog({
             className="border-border bg-surface fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-xl border p-6 focus:outline-none"
           >
             <Dialog.Title className="text-muted-foreground text-xs font-medium">
-              {issue.data?.identifier ?? 'Issue'}
+              {issue.data?.identifier ?? t('issue.detail.fallbackTitle')}
             </Dialog.Title>
             <Dialog.Description className="sr-only">
-              Details, activity, and comments for this issue
+              {t('issue.detail.description')}
             </Dialog.Description>
             <Dialog.Close
-              aria-label="Close"
+              aria-label={t('common.close')}
               className="text-muted-foreground hover:text-foreground absolute right-4 top-4"
             >
               <X className="h-5 w-5" />
             </Dialog.Close>
 
             {!issue.data ? (
-              <p className="text-muted-foreground mt-4 text-sm">Loading…</p>
+              <p className="text-muted-foreground mt-4 text-sm">{t('common.loading')}</p>
             ) : (
               <>
                 <input
-                  aria-label="Issue title"
+                  aria-label={t('issue.detail.titleAriaLabel')}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   onBlur={commitTitle}
@@ -109,8 +111,8 @@ export function IssueDetailDialog({
                 />
 
                 <textarea
-                  aria-label="Issue description"
-                  placeholder="Add a description…"
+                  aria-label={t('issue.detail.descriptionAriaLabel')}
+                  placeholder={t('issue.detail.descriptionPlaceholder')}
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -120,23 +122,23 @@ export function IssueDetailDialog({
 
                 <div className="border-border mb-6 grid grid-cols-2 gap-3 rounded-lg border p-3 text-sm sm:grid-cols-3">
                   <div>
-                    <p className="text-muted-foreground mb-1 text-xs">Status</p>
+                    <p className="text-muted-foreground mb-1 text-xs">{t('issue.fields.status')}</p>
                     <StatusSelect
                       value={issue.data.status}
                       onChange={(status) => updateIssue.mutate({ issueId, input: { status } })}
                     />
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1 text-xs">Priority</p>
+                    <p className="text-muted-foreground mb-1 text-xs">{t('issue.fields.priority')}</p>
                     <PrioritySelect
                       value={issue.data.priority}
                       onChange={(priority) => updateIssue.mutate({ issueId, input: { priority } })}
                     />
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1 text-xs">Assignee</p>
+                    <p className="text-muted-foreground mb-1 text-xs">{t('issue.fields.assignee')}</p>
                     <select
-                      aria-label="Assignee"
+                      aria-label={t('issue.fields.assignee')}
                       value={issue.data.assignee?.id ?? ''}
                       onChange={(e) =>
                         updateIssue.mutate({
@@ -146,7 +148,7 @@ export function IssueDetailDialog({
                       }
                       className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
                     >
-                      <option value="">Unassigned</option>
+                      <option value="">{t('common.unassigned')}</option>
                       {members.data?.map((member) => (
                         <option key={member.userId} value={member.userId}>
                           {member.name}
@@ -155,9 +157,9 @@ export function IssueDetailDialog({
                     </select>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1 text-xs">Project</p>
+                    <p className="text-muted-foreground mb-1 text-xs">{t('issue.fields.project')}</p>
                     <select
-                      aria-label="Project"
+                      aria-label={t('issue.fields.project')}
                       value={issue.data.projectId ?? ''}
                       onChange={(e) =>
                         updateIssue.mutate({
@@ -167,7 +169,7 @@ export function IssueDetailDialog({
                       }
                       className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
                     >
-                      <option value="">No project</option>
+                      <option value="">{t('common.noProject')}</option>
                       {projects.data?.map((project) => (
                         <option key={project.id} value={project.id}>
                           {project.name}
@@ -176,9 +178,9 @@ export function IssueDetailDialog({
                     </select>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1 text-xs">Cycle</p>
+                    <p className="text-muted-foreground mb-1 text-xs">{t('issue.fields.cycle')}</p>
                     <select
-                      aria-label="Cycle"
+                      aria-label={t('issue.fields.cycle')}
                       value={issue.data.cycleId ?? ''}
                       onChange={(e) =>
                         updateIssue.mutate({
@@ -188,7 +190,7 @@ export function IssueDetailDialog({
                       }
                       className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
                     >
-                      <option value="">No cycle</option>
+                      <option value="">{t('common.noCycle')}</option>
                       {cycles.data?.map((cycle) => (
                         <option key={cycle.id} value={cycle.id}>
                           {cycle.name}
@@ -197,18 +199,18 @@ export function IssueDetailDialog({
                     </select>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1 text-xs">Created by</p>
+                    <p className="text-muted-foreground mb-1 text-xs">{t('issue.fields.createdBy')}</p>
                     <p>{issue.data.creator.name}</p>
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="mb-2 text-sm font-medium">Activity</h3>
+                  <h3 className="mb-2 text-sm font-medium">{t('issue.detail.activity')}</h3>
                   <ActivityFeed activities={activities.data ?? []} />
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="mb-2 text-sm font-medium">Comments</h3>
+                  <h3 className="mb-2 text-sm font-medium">{t('issue.detail.comments')}</h3>
                   <CommentList comments={comments.data ?? []} />
                 </div>
 
@@ -224,7 +226,7 @@ export function IssueDetailDialog({
                   }}
                   className="mt-6 self-start text-xs text-red-500 hover:underline"
                 >
-                  Delete issue
+                  {t('issue.detail.delete')}
                 </button>
               </>
             )}

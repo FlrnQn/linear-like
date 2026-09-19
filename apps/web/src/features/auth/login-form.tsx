@@ -1,12 +1,14 @@
 import { loginSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
 import { useId } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '@/lib/api-client'
 
 import { useLogin } from './use-login'
 
 export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+  const { t } = useTranslation()
   const login = useLogin()
   const id = useId()
 
@@ -34,7 +36,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
         {(field) => (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
-              Email
+              {t('auth.email')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -56,7 +58,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
         {(field) => (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-${field.name}`} className="text-sm font-medium">
-              Password
+              {t('auth.password')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -76,7 +78,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 
       {login.isError && (
         <p className="text-sm text-red-500">
-          {login.error instanceof ApiError ? login.error.message : 'Something went wrong'}
+          {login.error instanceof ApiError ? login.error.message : t('common.somethingWentWrong')}
         </p>
       )}
 
@@ -87,7 +89,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             disabled={!canSubmit || isSubmitting}
             className="bg-accent text-accent-foreground mt-2 rounded-lg px-3 py-2 text-sm font-medium transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
+            {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
           </button>
         )}
       </form.Subscribe>

@@ -2,6 +2,7 @@ import { cn } from '@lynx/shared'
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { FolderKanban, Users } from 'lucide-react'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/components/empty-state'
 import { Skeleton } from '@/components/skeleton'
@@ -28,6 +29,7 @@ export const Route = createFileRoute('/')({
 })
 
 function HomePage() {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const workspaces = useWorkspaces()
   const logout = useLogout()
@@ -55,7 +57,9 @@ function HomePage() {
           <p className="text-muted-foreground text-xs font-medium uppercase tracking-[0.3em]">
             LYNX
           </p>
-          <h1 className="text-2xl font-semibold">Welcome back, {user?.name.split(' ')[0]}</h1>
+          <h1 className="text-2xl font-semibold">
+            {t('home.welcomeBack', { name: user?.name.split(' ')[0] })}
+          </h1>
         </div>
         <button
           type="button"
@@ -67,7 +71,7 @@ function HomePage() {
           }}
           className="text-muted-foreground hover:text-foreground text-sm transition-colors"
         >
-          Sign out
+          {t('auth.signOut')}
         </button>
       </header>
 
@@ -78,9 +82,9 @@ function HomePage() {
         </div>
       ) : workspaces.data && workspaces.data.length === 0 ? (
         <section className="border-border bg-surface rounded-xl border p-6">
-          <h2 className="mb-1 text-sm font-medium">Create your first workspace</h2>
+          <h2 className="mb-1 text-sm font-medium">{t('home.createFirstWorkspaceTitle')}</h2>
           <p className="text-muted-foreground mb-4 text-sm">
-            A workspace groups your teams, projects, and issues.
+            {t('home.createFirstWorkspaceDescription')}
           </p>
           <CreateWorkspaceForm onSuccess={() => undefined} />
         </section>
@@ -107,7 +111,7 @@ function HomePage() {
           {stats.data && <DashboardPanel stats={stats.data} />}
 
           <div className="border-border bg-surface rounded-xl border p-6">
-            <h2 className="mb-4 text-sm font-medium">Teams</h2>
+            <h2 className="mb-4 text-sm font-medium">{t('home.teamsHeading')}</h2>
 
             {teams.isLoading ? (
               <div className="mb-4 flex flex-col gap-2">
@@ -132,8 +136,8 @@ function HomePage() {
             ) : (
               <EmptyState
                 icon={Users}
-                title="No teams yet"
-                description="Create a team to start organizing issues and cycles."
+                title={t('home.noTeamsTitle')}
+                description={t('home.noTeamsDescription')}
               />
             )}
 
@@ -143,7 +147,7 @@ function HomePage() {
           </div>
 
           <div className="border-border bg-surface rounded-xl border p-6">
-            <h2 className="mb-4 text-sm font-medium">Projects</h2>
+            <h2 className="mb-4 text-sm font-medium">{t('home.projectsHeading')}</h2>
 
             {projects.isLoading ? (
               <div className="mb-4 flex flex-col gap-2">
@@ -171,8 +175,8 @@ function HomePage() {
             ) : (
               <EmptyState
                 icon={FolderKanban}
-                title="No projects yet"
-                description="Create a project to group related issues together."
+                title={t('home.noProjectsTitle')}
+                description={t('home.noProjectsDescription')}
               />
             )}
 

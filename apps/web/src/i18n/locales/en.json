@@ -1,0 +1,209 @@
+{
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "add": "Add",
+    "creating": "Creating…",
+    "unassigned": "Unassigned",
+    "noProject": "No project",
+    "noCycle": "No cycle",
+    "somethingWentWrong": "Something went wrong",
+    "close": "Close",
+    "loading": "Loading…"
+  },
+  "auth": {
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "signOut": "Sign out",
+    "createAccount": "Create account",
+    "creatingAccount": "Creating account…",
+    "welcomeBack": "Welcome back",
+    "signInSubtitle": "Sign in to your LYNX workspace.",
+    "noAccount": "No account?",
+    "createOne": "Create one",
+    "createYourAccount": "Create your account",
+    "createAccountSubtitle": "Start your LYNX workspace in seconds.",
+    "alreadyHaveAccount": "Already have an account?"
+  },
+  "sidebar": {
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "search": "Search…",
+    "home": "Home",
+    "teams": "Teams",
+    "projects": "Projects",
+    "settings": "Settings",
+    "switchLanguage": "Switch to {{language}}"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "name": "Name",
+    "email": "Email",
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "language": "Language",
+    "languageEnglish": "English",
+    "languageFrench": "Français"
+  },
+  "activity": {
+    "createdIssue": "created this issue",
+    "statusChanged": "changed status from {{from}} to {{to}}",
+    "priorityChanged": "changed priority from {{from}} to {{to}}",
+    "assigned": "assigned this issue",
+    "unassigned": "unassigned this issue",
+    "labelsAdded": "added labels",
+    "labelsRemoved": "removed labels",
+    "issueDeleted": "deleted this issue",
+    "commentLeft": "left a comment",
+    "projectUpdated": "updated the project",
+    "cycleUpdated": "updated the cycle",
+    "empty": "No activity yet."
+  },
+  "commandPalette": {
+    "title": "Command menu",
+    "searchPlaceholder": "Search issues, jump to a team or project…",
+    "noResults": "No results found.",
+    "issuesGroup": "Issues",
+    "navigationGroup": "Navigation",
+    "home": "Home",
+    "goToTeam": "Go to {{name}}",
+    "goToProject": "Go to {{name}}",
+    "openSettings": "Open settings",
+    "actionsGroup": "Actions",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode",
+    "navigate": "navigate",
+    "select": "select",
+    "close": "close"
+  },
+  "comments": {
+    "placeholder": "Add a comment…",
+    "posting": "Posting…",
+    "submit": "Comment",
+    "empty": "No comments yet."
+  },
+  "cycles": {
+    "nameLabel": "Cycle name",
+    "start": "Start",
+    "end": "End"
+  },
+  "dashboard": {
+    "totalIssues": "Total issues",
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "projects": "Projects",
+    "issueCount_one": "{{count}} issue",
+    "issueCount_other": "{{count}} issues",
+    "chartTitle": "Issues created, last 30 days"
+  },
+  "issue": {
+    "fields": {
+      "status": "Status",
+      "priority": "Priority",
+      "assignee": "Assignee",
+      "project": "Project",
+      "cycle": "Cycle",
+      "createdBy": "Created by"
+    },
+    "status": {
+      "backlog": "Backlog",
+      "todo": "Todo",
+      "inProgress": "In Progress",
+      "inReview": "In Review",
+      "done": "Done",
+      "canceled": "Canceled"
+    },
+    "priority": {
+      "none": "No priority",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "form": {
+      "titlePlaceholder": "Issue title",
+      "descriptionPlaceholder": "Description (optional)",
+      "submit": "Create issue"
+    },
+    "board": {
+      "list": "List",
+      "kanban": "Kanban",
+      "all": "All",
+      "emptyTitle": "No issues yet",
+      "emptyDescription": "Create the first issue to get this team moving.",
+      "showingFirst": "Showing the first {{count}} issues — narrow with a cycle or team filter to see the rest."
+    },
+    "detail": {
+      "fallbackTitle": "Issue",
+      "description": "Details, activity, and comments for this issue",
+      "titleAriaLabel": "Issue title",
+      "descriptionAriaLabel": "Issue description",
+      "descriptionPlaceholder": "Add a description…",
+      "activity": "Activity",
+      "comments": "Comments",
+      "delete": "Delete issue"
+    },
+    "updateFailed": "Failed to update issue — changes reverted"
+  },
+  "projects": {
+    "nameLabel": "Project name",
+    "addAriaLabel": "Add project"
+  },
+  "realtime": {
+    "issueCreated": "{{identifier}} created",
+    "issueUpdated": "{{identifier}} updated",
+    "issueDeletedToast": "An issue was deleted",
+    "commentPosted": "New comment posted"
+  },
+  "teams": {
+    "nameLabel": "Team name",
+    "keyLabel": "Key",
+    "keyPlaceholder": "ENG",
+    "addAriaLabel": "Add team"
+  },
+  "workspaces": {
+    "nameLabel": "Workspace name",
+    "slugLabel": "Slug",
+    "submit": "Create workspace"
+  },
+  "app": {
+    "crashTitle": "Something went wrong",
+    "crashDescription": "Try reloading the page. If this keeps happening, your work in any open form may not be saved.",
+    "reload": "Reload"
+  },
+  "home": {
+    "welcomeBack": "Welcome back, {{name}}",
+    "createFirstWorkspaceTitle": "Create your first workspace",
+    "createFirstWorkspaceDescription": "A workspace groups your teams, projects, and issues.",
+    "teamsHeading": "Teams",
+    "noTeamsTitle": "No teams yet",
+    "noTeamsDescription": "Create a team to start organizing issues and cycles.",
+    "projectsHeading": "Projects",
+    "noProjectsTitle": "No projects yet",
+    "noProjectsDescription": "Create a project to group related issues together."
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your LYNX workspace."
+  },
+  "signup": {
+    "title": "Create your account",
+    "subtitle": "Start your LYNX workspace in seconds."
+  },
+  "teamPage": {
+    "newIssue": "New issue",
+    "cyclesHeading": "Cycles",
+    "newCycle": "+ New cycle",
+    "noCyclesYet": "No cycles yet.",
+    "filterByCycle": "Filter by cycle",
+    "allCycles": "All cycles"
+  },
+  "api": {
+    "requestFailed": "Request failed"
+  }
+}

@@ -9,6 +9,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
+import { useTranslation } from 'react-i18next'
 
 // activityByDay dates are plain "YYYY-MM-DD" strings (see dashboard.service.ts) —
 // format them in UTC so the label never shifts a day depending on the reader's
@@ -21,6 +22,7 @@ function formatDate(isoDate: string, options: Intl.DateTimeFormatOptions) {
 }
 
 function ActivityTooltip({ active, payload }: TooltipContentProps) {
+  const { t } = useTranslation()
   const point = payload?.[0]
   if (!active || !point || typeof point.value !== 'number') return null
   const { date } = point.payload as { date: string; count: number }
@@ -28,7 +30,7 @@ function ActivityTooltip({ active, payload }: TooltipContentProps) {
   return (
     <div className="border-border bg-surface rounded-lg border px-3 py-2 text-sm shadow-lg">
       <p className="text-foreground font-semibold">
-        {point.value} issue{point.value === 1 ? '' : 's'}
+        {t('dashboard.issueCount', { count: point.value })}
       </p>
       <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
         <span className="bg-accent inline-block h-0.5 w-3" aria-hidden />
@@ -39,9 +41,11 @@ function ActivityTooltip({ active, payload }: TooltipContentProps) {
 }
 
 export function IssuesActivityChart({ data }: { data: WorkspaceStats['activityByDay'] }) {
+  const { t } = useTranslation()
+
   return (
     <div className="border-border bg-surface rounded-xl border p-4">
-      <h2 className="text-sm font-medium">Issues created, last 30 days</h2>
+      <h2 className="text-sm font-medium">{t('dashboard.chartTitle')}</h2>
       <div className="mt-4 h-56">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>

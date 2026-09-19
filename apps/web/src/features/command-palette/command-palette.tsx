@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Command } from 'cmdk'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useLogout } from '@/features/auth/use-logout'
 import { useIssueSearch } from '@/features/search/use-issue-search'
@@ -12,6 +13,7 @@ import { useUiStore } from '@/stores/ui-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 export function CommandPalette() {
+  const { t } = useTranslation()
   const open = useUiStore((state) => state.commandPaletteOpen)
   const setOpen = useUiStore((state) => state.setCommandPaletteOpen)
   const theme = useUiStore((state) => state.theme)
@@ -70,23 +72,23 @@ export function CommandPalette() {
                 transition={{ duration: 0.15, ease: 'easeOut' }}
                 className="border-border bg-surface fixed left-1/2 top-[18%] z-[100] w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-xl border shadow-2xl"
               >
-                <Dialog.Title className="sr-only">Command menu</Dialog.Title>
+                <Dialog.Title className="sr-only">{t('commandPalette.title')}</Dialog.Title>
                 <Command shouldFilter={false} className="flex flex-col">
                   <Command.Input
                     autoFocus
                     value={query}
                     onValueChange={setQuery}
-                    placeholder="Search issues, jump to a team or project…"
+                    placeholder={t('commandPalette.searchPlaceholder')}
                     className="border-border placeholder:text-muted-foreground border-b bg-transparent px-4 py-3 text-sm outline-none"
                   />
                   <Command.List className="max-h-80 overflow-y-auto p-2">
                     <Command.Empty className="text-muted-foreground px-2 py-6 text-center text-sm">
-                      No results found.
+                      {t('commandPalette.noResults')}
                     </Command.Empty>
 
                     {!showNavigation && (
                       <Command.Group
-                        heading="Issues"
+                        heading={t('commandPalette.issuesGroup')}
                         className="text-muted-foreground px-2 py-1.5 text-xs font-medium [&_[cmdk-group-items]]:mt-1"
                       >
                         {search.data?.map((result) => (
@@ -114,7 +116,7 @@ export function CommandPalette() {
                     {showNavigation && (
                       <>
                         <Command.Group
-                          heading="Navigation"
+                          heading={t('commandPalette.navigationGroup')}
                           className="text-muted-foreground px-2 py-1.5 text-xs font-medium [&_[cmdk-group-items]]:mt-1"
                         >
                           <Command.Item
@@ -124,7 +126,7 @@ export function CommandPalette() {
                             }}
                             className="text-foreground aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer rounded-lg px-2 py-2 text-sm"
                           >
-                            Home
+                            {t('commandPalette.home')}
                           </Command.Item>
                           {teams.data?.map((team) => (
                             <Command.Item
@@ -135,7 +137,7 @@ export function CommandPalette() {
                               }}
                               className="text-foreground aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer rounded-lg px-2 py-2 text-sm"
                             >
-                              Go to {team.name}
+                              {t('commandPalette.goToTeam', { name: team.name })}
                             </Command.Item>
                           ))}
                           {projects.data?.map((project) => (
@@ -150,7 +152,7 @@ export function CommandPalette() {
                               }}
                               className="text-foreground aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer rounded-lg px-2 py-2 text-sm"
                             >
-                              Go to {project.name}
+                              {t('commandPalette.goToProject', { name: project.name })}
                             </Command.Item>
                           ))}
                           <Command.Item
@@ -160,12 +162,12 @@ export function CommandPalette() {
                             }}
                             className="text-foreground aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer rounded-lg px-2 py-2 text-sm"
                           >
-                            Open settings
+                            {t('commandPalette.openSettings')}
                           </Command.Item>
                         </Command.Group>
 
                         <Command.Group
-                          heading="Actions"
+                          heading={t('commandPalette.actionsGroup')}
                           className="text-muted-foreground px-2 py-1.5 text-xs font-medium [&_[cmdk-group-items]]:mt-1"
                         >
                           <Command.Item
@@ -175,7 +177,9 @@ export function CommandPalette() {
                             }}
                             className="text-foreground aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer rounded-lg px-2 py-2 text-sm"
                           >
-                            Switch to {theme === 'dark' ? 'light' : 'dark'} mode
+                            {theme === 'dark'
+                              ? t('commandPalette.switchToLight')
+                              : t('commandPalette.switchToDark')}
                           </Command.Item>
                           <Command.Item
                             onSelect={() => {
@@ -184,7 +188,7 @@ export function CommandPalette() {
                             }}
                             className="text-foreground aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer rounded-lg px-2 py-2 text-sm"
                           >
-                            Sign out
+                            {t('auth.signOut')}
                           </Command.Item>
                         </Command.Group>
                       </>
@@ -193,13 +197,13 @@ export function CommandPalette() {
 
                   <div className="border-border text-muted-foreground flex items-center gap-3 border-t px-4 py-2 text-xs">
                     <span>
-                      <kbd className="border-border rounded border px-1">↑↓</kbd> navigate
+                      <kbd className="border-border rounded border px-1">↑↓</kbd> {t('commandPalette.navigate')}
                     </span>
                     <span>
-                      <kbd className="border-border rounded border px-1">↵</kbd> select
+                      <kbd className="border-border rounded border px-1">↵</kbd> {t('commandPalette.select')}
                     </span>
                     <span>
-                      <kbd className="border-border rounded border px-1">esc</kbd> close
+                      <kbd className="border-border rounded border px-1">esc</kbd> {t('commandPalette.close')}
                     </span>
                   </div>
                 </Command>

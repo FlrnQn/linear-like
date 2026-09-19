@@ -2,10 +2,12 @@ import type { Issue } from '@lynx/types'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { PRIORITY_LABELS } from './status-priority'
+import { PRIORITY_LABEL_KEYS } from './status-priority'
 
 function KanbanCardImpl({ issue, onClick }: { issue: Issue; onClick: () => void }) {
+  const { t } = useTranslation()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue.id,
   })
@@ -29,7 +31,7 @@ function KanbanCardImpl({ issue, onClick }: { issue: Issue; onClick: () => void 
       <p className="line-clamp-2">{issue.title}</p>
       <div className="mt-2 flex items-center justify-between gap-2">
         {issue.priority !== 'NO_PRIORITY' ? (
-          <span className="text-muted-foreground text-xs">{PRIORITY_LABELS[issue.priority]}</span>
+          <span className="text-muted-foreground text-xs">{t(PRIORITY_LABEL_KEYS[issue.priority])}</span>
         ) : (
           <span />
         )}

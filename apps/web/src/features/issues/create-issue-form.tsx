@@ -2,6 +2,7 @@ import type { IssuePriority } from '@lynx/types'
 import { createIssueSchema } from '@lynx/types'
 import { cn } from '@lynx/shared'
 import { useForm } from '@tanstack/react-form'
+import { useTranslation } from 'react-i18next'
 
 import { useCycles } from '@/features/cycles/use-cycles'
 import { useLabels } from '@/features/labels/use-labels'
@@ -21,6 +22,7 @@ export function CreateIssueForm({
   workspaceId: string
   onSuccess: () => void
 }) {
+  const { t } = useTranslation()
   const createIssue = useCreateIssue()
   const members = useWorkspaceMembers(workspaceId)
   const labels = useLabels(workspaceId)
@@ -69,7 +71,7 @@ export function CreateIssueForm({
         {(field) => (
           <input
             autoFocus
-            placeholder="Issue title"
+            placeholder={t('issue.form.titlePlaceholder')}
             value={field.state.value}
             onChange={(e) => field.handleChange(e.target.value)}
             className="border-border bg-background focus:border-accent rounded-lg border px-3 py-2 text-sm outline-none"
@@ -80,7 +82,7 @@ export function CreateIssueForm({
       <form.Field name="description">
         {(field) => (
           <textarea
-            placeholder="Description (optional)"
+            placeholder={t('issue.form.descriptionPlaceholder')}
             rows={2}
             value={field.state.value}
             onChange={(e) => field.handleChange(e.target.value)}
@@ -97,12 +99,12 @@ export function CreateIssueForm({
         <form.Field name="assigneeId">
           {(field) => (
             <select
-              aria-label="Assignee"
+              aria-label={t('issue.fields.assignee')}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
             >
-              <option value="">Unassigned</option>
+              <option value="">{t('common.unassigned')}</option>
               {members.data?.map((member) => (
                 <option key={member.userId} value={member.userId}>
                   {member.name}
@@ -115,12 +117,12 @@ export function CreateIssueForm({
         <form.Field name="projectId">
           {(field) => (
             <select
-              aria-label="Project"
+              aria-label={t('issue.fields.project')}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
             >
-              <option value="">No project</option>
+              <option value="">{t('common.noProject')}</option>
               {projects.data?.map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name}
@@ -133,12 +135,12 @@ export function CreateIssueForm({
         <form.Field name="cycleId">
           {(field) => (
             <select
-              aria-label="Cycle"
+              aria-label={t('issue.fields.cycle')}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
             >
-              <option value="">No cycle</option>
+              <option value="">{t('common.noCycle')}</option>
               {cycles.data?.map((cycle) => (
                 <option key={cycle.id} value={cycle.id}>
                   {cycle.name}
@@ -187,7 +189,7 @@ export function CreateIssueForm({
         <p className="text-sm text-red-500">
           {createIssue.error instanceof ApiError
             ? createIssue.error.message
-            : 'Something went wrong'}
+            : t('common.somethingWentWrong')}
         </p>
       )}
 
@@ -200,7 +202,7 @@ export function CreateIssueForm({
             disabled={!canSubmit || isSubmitting || title.trim().length === 0}
             className="bg-accent text-accent-foreground self-start rounded-lg px-3 py-1.5 text-sm font-medium transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? 'Creating…' : 'Create issue'}
+            {isSubmitting ? t('common.creating') : t('issue.form.submit')}
           </button>
         )}
       </form.Subscribe>

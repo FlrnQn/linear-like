@@ -1,12 +1,14 @@
 import { createCycleSchema } from '@lynx/types'
 import { useForm } from '@tanstack/react-form'
 import { useId } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '@/lib/api-client'
 
 import { useCreateCycle } from './use-create-cycle'
 
 export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSuccess: () => void }) {
+  const { t } = useTranslation()
   const createCycle = useCreateCycle(teamId)
   const id = useId()
 
@@ -40,7 +42,7 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
         {(field) => (
           <div className="flex flex-col gap-1">
             <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
-              Cycle name
+              {t('cycles.nameLabel')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -57,7 +59,7 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
         {(field) => (
           <div className="flex flex-col gap-1">
             <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
-              Start
+              {t('cycles.start')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -74,7 +76,7 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
         {(field) => (
           <div className="flex flex-col gap-1">
             <label htmlFor={`${id}-${field.name}`} className="text-muted-foreground text-xs">
-              End
+              {t('cycles.end')}
             </label>
             <input
               id={`${id}-${field.name}`}
@@ -104,7 +106,7 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
             disabled={!canSubmit || isSubmitting || !name.trim() || !startDate || !endDate}
             className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-sm font-medium transition-opacity disabled:opacity-50"
           >
-            Add
+            {t('common.add')}
           </button>
         )}
       </form.Subscribe>
@@ -113,7 +115,7 @@ export function CreateCycleForm({ teamId, onSuccess }: { teamId: string; onSucce
         <p className="text-xs text-red-500">
           {createCycle.error instanceof ApiError
             ? createCycle.error.message
-            : 'Something went wrong'}
+            : t('common.somethingWentWrong')}
         </p>
       )}
     </form>

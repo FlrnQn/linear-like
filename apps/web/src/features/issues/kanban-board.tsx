@@ -3,9 +3,10 @@ import { ISSUE_STATUSES } from '@lynx/types'
 import type { DragEndEvent } from '@dnd-kit/core'
 import { closestCorners, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { KanbanColumn } from './kanban-column'
-import { STATUS_LABELS } from './status-priority'
+import { STATUS_LABEL_KEYS } from './status-priority'
 import { useUpdateIssue } from './use-update-issue'
 
 function isIssueStatus(value: string): value is IssueStatus {
@@ -19,6 +20,7 @@ export function KanbanBoard({
   issues: Issue[]
   onSelectIssue: (issueId: string) => void
 }) {
+  const { t } = useTranslation()
   const updateIssue = useUpdateIssue()
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
@@ -78,7 +80,7 @@ export function KanbanBoard({
           <KanbanColumn
             key={status}
             status={status}
-            label={STATUS_LABELS[status]}
+            label={t(STATUS_LABEL_KEYS[status])}
             issues={columns.get(status) ?? []}
             onSelectIssue={onSelectIssue}
           />

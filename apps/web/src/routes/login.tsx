@@ -1,4 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
 import { LoginForm } from '@/features/auth/login-form'
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/login')({
 })
 
 function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { redirect: redirectTo } = Route.useSearch()
 
@@ -29,13 +31,13 @@ function LoginPage() {
         className="pointer-events-none absolute right-[10%] top-1/2 h-64 w-64 -translate-y-1/2 opacity-80 sm:right-[18%]"
       />
       <div className="border-border bg-surface relative z-10 w-full max-w-sm rounded-xl border p-6">
-        <h1 className="mb-1 text-lg font-semibold">Welcome back</h1>
-        <p className="text-muted-foreground mb-6 text-sm">Sign in to your LYNX workspace.</p>
+        <h1 className="mb-1 text-lg font-semibold">{t('login.title')}</h1>
+        <p className="text-muted-foreground mb-6 text-sm">{t('login.subtitle')}</p>
         <LoginForm onSuccess={() => void navigate({ to: redirectTo ?? '/' })} />
         <p className="text-muted-foreground mt-6 text-center text-sm">
-          No account?{' '}
+          {t('auth.noAccount')}{' '}
           <Link to="/signup" className="text-accent hover:underline">
-            Create one
+            {t('auth.createOne')}
           </Link>
         </p>
       </div>
