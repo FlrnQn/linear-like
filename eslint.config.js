@@ -49,6 +49,15 @@ export default tseslint.config(
     },
   },
   {
+    // React Three Fiber's JSX intrinsics (<mesh>, <ambientLight>, ...) map to
+    // three.js constructor props (args, intensity, position, ...), which
+    // eslint-plugin-react's DOM-prop allowlist doesn't know about.
+    files: ['apps/web/src/features/three/**/*.tsx'],
+    rules: {
+      'react/no-unknown-property': 'off',
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],

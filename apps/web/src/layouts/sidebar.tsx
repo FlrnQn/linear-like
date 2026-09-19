@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Home, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
 import { motion } from 'motion/react'
 
+import { Tooltip } from '@/components/tooltip'
 import { useProjects } from '@/features/projects/use-projects'
 import { useTeams } from '@/features/teams/use-teams'
 import { useUiStore } from '@/stores/ui-store'
@@ -29,18 +30,20 @@ export function Sidebar() {
     >
       <div className="flex items-center justify-between px-4 py-4">
         {!collapsed && <span className="text-sm font-semibold tracking-wide">LYNX</span>}
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? (
-            <PanelLeftOpen className="h-4 w-4" />
-          ) : (
-            <PanelLeftClose className="h-4 w-4" />
-          )}
-        </button>
+        <Tooltip content={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </button>
+        </Tooltip>
       </div>
 
       <button

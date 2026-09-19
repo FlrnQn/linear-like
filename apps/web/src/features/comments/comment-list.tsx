@@ -1,8 +1,10 @@
 import type { Comment } from '@lynx/types'
 
+import { EmptyState } from '@/components/empty-state'
+
 export function CommentList({ comments }: { comments: Comment[] }) {
   if (comments.length === 0) {
-    return <p className="text-muted-foreground text-sm">No comments yet.</p>
+    return <EmptyState title="No comments yet." compact />
   }
 
   return (

@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
+import { Skeleton } from '@/components/skeleton'
 import { IssueBoard } from '@/features/issues/issue-board'
 import { IssueDetailDialog } from '@/features/issues/issue-detail-dialog'
 import { useProject } from '@/features/projects/use-project'
@@ -36,7 +37,12 @@ function ProjectIssuesPage() {
   }, [project.data, setActiveWorkspaceId])
 
   if (!project.data) {
-    return <p className="text-muted-foreground p-16 text-sm">Loading project…</p>
+    return (
+      <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-16">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full" />
+      </main>
+    )
   }
 
   return (

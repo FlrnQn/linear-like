@@ -16,7 +16,12 @@ function IssueRowImpl({ issue, onClick }: { issue: Issue; onClick: () => void })
       className="border-border hover:border-accent flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors"
     >
       <span className="text-muted-foreground w-16 shrink-0 text-xs">{issue.identifier}</span>
-      <span className={cn('h-2 w-2 shrink-0 rounded-full', STATUS_DOT_COLORS[issue.status])} />
+      <span
+        className={cn(
+          'h-2 w-2 shrink-0 rounded-full transition-colors duration-300',
+          STATUS_DOT_COLORS[issue.status],
+        )}
+      />
       <span className="flex-1 truncate">{issue.title}</span>
 
       {issue.labels.length > 0 && (

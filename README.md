@@ -2,20 +2,20 @@
 
 A Linear-inspired project management platform, built from scratch as a technical playground for modern full-stack TypeScript practices.
 
-> **Status: Phase 8 — Analytics, performance & virtualization.** Cursor-paginated issue lists, a virtualized List view, a workspace dashboard (stat tiles + Recharts activity chart), and composite indexes verified against a 10k-issue seed. Real-time (WebSocket) landed in Phase 7; a command palette, persistent sidebar, light/dark theme, and Motion-driven polish in Phase 6. 3D accents and final polish are what's left.
+> **Status: Phase 9 — 3D accents, advanced animations, empty & loading states.** A minimal React Three Fiber "LYNX object" now accents the login page, the boot screen, and the primary empty state — lightweight, lazy-loaded, disableable, and `prefers-reduced-motion`-aware. Status/priority pickers are animated Radix dropdowns, page transitions and stat-tile count-ups round out the animation pass, and every ad hoc "Loading…"/"No X yet" string is now a real skeleton or empty-state component. Analytics, virtualization, and real-time landed in Phases 7–8.
 
 ## Stack
 
-| Layer      | Choices                                                                                                                                                                   |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend   | React 19, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Form, TanStack Virtual, Zustand, dnd-kit, Radix UI, cmdk, Motion, Recharts, Lucide, Tailwind CSS v4 |
-| Backend    | Node.js, TypeScript, Fastify 5, PostgreSQL, Redis (pub/sub), WebSocket (`@fastify/websocket`)                                                                             |
-| Database   | Drizzle ORM (node-postgres driver), Drizzle Kit migrations, snake_case DB / camelCase JS via `casing: 'snake_case'`                                                       |
-| Auth       | Argon2 password hashing, JWT access tokens (`@fastify/jwt`), rotating opaque refresh tokens in an httpOnly cookie                                                         |
-| Validation | Zod schemas shared between web and api via `@lynx/types` (request bodies, forms, env parsing)                                                                             |
-| Tooling    | pnpm workspaces, Turborepo, ESLint (flat config), Prettier, Docker Compose                                                                                                |
+| Layer      | Choices                                                                                                                                                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend   | React 19, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Form, TanStack Virtual, Zustand, dnd-kit, Radix UI, cmdk, Motion, Recharts, Three.js, React Three Fiber, `@react-three/drei`, Lucide, Tailwind CSS v4 |
+| Backend    | Node.js, TypeScript, Fastify 5, PostgreSQL, Redis (pub/sub), WebSocket (`@fastify/websocket`)                                                                                                                               |
+| Database   | Drizzle ORM (node-postgres driver), Drizzle Kit migrations, snake_case DB / camelCase JS via `casing: 'snake_case'`                                                                                                         |
+| Auth       | Argon2 password hashing, JWT access tokens (`@fastify/jwt`), rotating opaque refresh tokens in an httpOnly cookie                                                                                                           |
+| Validation | Zod schemas shared between web and api via `@lynx/types` (request bodies, forms, env parsing)                                                                                                                               |
+| Tooling    | pnpm workspaces, Turborepo, ESLint (flat config), Prettier, Docker Compose                                                                                                                                                  |
 
-Additional libraries called for in the full spec (shadcn/ui, Three.js/R3F) are **not installed yet**. They're introduced in the phase where they're first actually used, so every dependency in `package.json` has a real caller. TanStack Virtual and Recharts joined in Phase 8.
+Additional libraries called for in the full spec (shadcn/ui) are **not installed yet** — introduced in the phase where they're first actually used, so every dependency in `package.json` has a real caller. TanStack Virtual and Recharts joined in Phase 8; Three.js/React Three Fiber/drei and `@radix-ui/react-select`/`@radix-ui/react-tooltip` joined in Phase 9.
 
 ## Architecture
 
@@ -27,10 +27,10 @@ lynx/
 │   │       ├── app/            # router/query-client setup, AppProviders (session bootstrap)
 │   │       ├── routes/         # TanStack Router routes (/, /login, /signup, /settings, /teams/$id, /projects/$id)
 │   │       ├── features/       # auth, workspaces, teams, projects, cycles, issues, labels, comments,
-│   │       │                   # activities, search, command-palette, realtime, dashboard
-│   │       ├── components/     # cross-feature shared UI (e.g. ToastStack)
+│   │       │                   # activities, search, command-palette, realtime, dashboard, three
+│   │       ├── components/     # cross-feature shared UI (ToastStack, Skeleton, EmptyState, Tooltip, ErrorBoundary)
 │   │       ├── layouts/        # Sidebar (collapsible, animated, workspace nav)
-│   │       ├── hooks/          # (reserved) cross-cutting hooks
+│   │       ├── hooks/          # usePrefersReducedMotion
 │   │       ├── lib/            # api-client (auth header + refresh-on-401), API base URL
 │   │       ├── stores/         # Zustand: auth, ui (theme/sidebar/palette), workspace, toast
 │   │       └── styles/         # Tailwind entry + design tokens
@@ -164,6 +164,20 @@ Each issue gets its own `createdAt`, spread over the last 60 days (`faker.date.b
 - **The area chart's color follows the dataviz method, not eyeballing**: a single time-series (issues created per day) is a one-hue "sequential/1-categorical" color job, which is explicitly out of scope for the categorical six-checks validator (`validate_palette.js` — it validates _identity_ palettes; a lone accent hue isn't one). It reuses the app's existing single accent (`var(--color-accent)`, already contrast-checked by virtue of being the app's button/focus color) at full opacity for the 2px line and ~10% opacity for the area wash, with solid (never dashed) hairline gridlines and no legend — a single series needs none.
 - **Measured, didn't assume, that the new `recharts`/`@tanstack/react-virtual` dependencies don't bloat the eagerly-loaded bundle.** Built both before and after this phase's changes (via `git stash`): the main entry chunk was 671.95 kB before and 672.13 kB after — a ~0.2 kB difference. Both new dependencies land inside route-level async chunks (`recharts` in the `/` route's chunk, `react-virtual` in the shared chunk behind the team/project issue views) thanks to TanStack Router's `autoCodeSplitting`, so they only download for someone who actually visits those routes. The pre-existing >500 kB main-chunk warning predates this phase and wasn't introduced or made worse by it.
 
+## 3D accents, animations & empty/loading states
+
+- **One React Three Fiber "LYNX object," reused everywhere it appears** — a single distorted icosahedron mesh (`apps/web/src/features/three/lynx-canvas.tsx`), parameterized by a `variant` prop (`login` / `boot` / `empty`) that only tweaks scale, rotation speed, and distortion — not three different bespoke scenes. Matches the spec's request for "un objet 3D LYNX minimaliste," singular: one recognizable shape carries the brand accent, rather than a different gimmick per screen.
+- **Every call site goes through one `<Scene3D>` wrapper**, never `LynxCanvas` directly — it's the single place that (1) checks `prefers-reduced-motion` and renders nothing if set, (2) lazy-loads the Three.js chunk via `React.lazy`, and (3) wraps it in an error boundary with a `null` fallback. A third-party WebGL scene failing to mount should never be able to take a page down with it — the spec's "légère, désactivable, performante" requirements are enforced structurally at this one seam, not repeated per usage.
+- **The accent color is a hand-verified sRGB conversion, not a guess.** three.js's `Color` doesn't parse `oklch()` strings, so the app's accent (`oklch(0.72 0.19 280)`) was converted with the standard OKLab→sRGB matrices and round-tripped back to OKLCH to confirm the math (`#9092ff` → `oklch(0.706 0.157 280.8)`, matching within expected sRGB-gamut clipping) before hardcoding it in the 3D material.
+- **Measured, not assumed, that `@react-three/drei`'s `Float`/`MeshDistortMaterial` aren't the bundle cost.** Built the 3D chunk with and without drei: raw three.js + fiber alone is ~907 kB / 242 kB gzip; adding drei's helpers costs another ~1.5 kB gzip. The weight is three.js/fiber's own core (renderer, geometries, materials, the custom reconciler) — an unavoidable property of the mandated stack, not a wasteful import. The chunk is lazy (`React.lazy`, confirmed via build-output grep to be absent from the eager main entry) and every page around it renders immediately regardless of whether the 3D chunk has finished loading (`Suspense fallback={null}`), so the cost is real but never blocks anything.
+- **Found and fixed a real React/React Three Fiber version conflict, not a false-positive peer warning.** `@react-three/fiber@9.7.0`'s custom reconciler depends on `scheduler@^0.27.0`; React 19.3.0 ships `scheduler@0.28.0` — running both under one renderer is a genuine, structurally unsafe combination (confirmed via upstream reports, not just the peer-range warning), not upstream being overly cautious. Fixed by pinning `react`/`react-dom`/`@types/react`/`@types/react-dom` to the exact stable `19.2.0` release the whole monorepo now uses — `pnpm peers check` reports zero issues after the pin.
+- **Status/priority pickers are now animated Radix `Select` components**, replacing native `<select>` — same external `{value, onChange}` props as before (a 3-call-site blast radius, verified before rewriting), same Radix-primitive + `asChild` + `motion.div` + `forceMount`/`AnimatePresence` pattern already established for the issue-detail dialog and command palette in Phase 6, so the codebase has one consistent way to build an animated overlay, not several.
+- **Page transitions wrap `<Outlet />` in `__root.tsx`**, keyed on the router's current pathname — a plain fade/slide, skipped entirely (renders children directly, no wrapper) when `prefers-reduced-motion` is set.
+- **A shared `usePrefersReducedMotion` hook** (`apps/web/src/hooks/`, the first real occupant of that previously-empty reserved directory) wraps `matchMedia('(prefers-reduced-motion: reduce)')` via `useSyncExternalStore` — used to gate both the 3D scenes and the page-transition wrapper from one source of truth.
+- **Every ad hoc "Loading X…" and "No X yet" string became a real component.** A `<Skeleton>` primitive (a single pulsing div) replaces loading text across the home page, issue board (List and Kanban), and team/project pages. A `<EmptyState>` component replaces empty-state text, with three deliberately different treatments: the 3D LYNX object for the one most prominent empty state (an empty issue list — the literal example from the spec), a Lucide icon + heading + description block for secondary lists (teams, projects), and a compact single-line icon+text form for empty states already living inside a tight space (cycles, comments, activity feed) — not every "no X yet" line earns the same visual weight.
+- **Dashboard stat tiles count up on mount and on value change**, via Motion's imperative `animate()` driving a plain `useState` (not a `MotionValue` rendered as text — Motion values bind to style/props, not arbitrary JSX children) — a real, scoped answer to the spec's "transitions des statistiques," not a generic fade.
+- **The sidebar's collapse toggle gets a Radix `Tooltip`** (same Motion-animated pattern as Select), the one icon-only control in the app that previously had no visible affordance beyond its `aria-label`.
+
 ## Prerequisites
 
 - Node.js ≥ 22
@@ -230,5 +244,5 @@ pnpm db:studio      # browse the database in Drizzle Studio
 - [x] Phase 6 — Command palette, keyboard shortcuts, search, animations
 - [x] Phase 7 — Real-time (WebSocket), optimistic updates
 - [x] Phase 8 — Analytics, performance, virtualization
-- [ ] Phase 9 — 3D accents, advanced animations, empty/loading states
+- [x] Phase 9 — 3D accents, advanced animations, empty/loading states
 - [ ] Phase 10 — Tests, CI, docs, final cleanup

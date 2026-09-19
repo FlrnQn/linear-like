@@ -1,7 +1,10 @@
 import { cn } from '@lynx/shared'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { FolderKanban, Users } from 'lucide-react'
 import { useEffect } from 'react'
 
+import { EmptyState } from '@/components/empty-state'
+import { Skeleton } from '@/components/skeleton'
 import { useLogout } from '@/features/auth/use-logout'
 import { DashboardPanel } from '@/features/dashboard/dashboard-panel'
 import { useWorkspaceStats } from '@/features/dashboard/use-workspace-stats'
@@ -63,7 +66,10 @@ function HomePage() {
       </header>
 
       {workspaces.isLoading ? (
-        <p className="text-muted-foreground text-sm">Loading workspaces…</p>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-20" />
+        </div>
       ) : workspaces.data && workspaces.data.length === 0 ? (
         <section className="border-border bg-surface rounded-xl border p-6">
           <h2 className="mb-1 text-sm font-medium">Create your first workspace</h2>
@@ -98,7 +104,10 @@ function HomePage() {
             <h2 className="mb-4 text-sm font-medium">Teams</h2>
 
             {teams.isLoading ? (
-              <p className="text-muted-foreground mb-4 text-sm">Loading teams…</p>
+              <div className="mb-4 flex flex-col gap-2">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+              </div>
             ) : teams.data && teams.data.length > 0 ? (
               <ul className="mb-4 flex flex-col gap-2">
                 {teams.data.map((team) => (
@@ -115,7 +124,11 @@ function HomePage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground mb-4 text-sm">No teams yet.</p>
+              <EmptyState
+                icon={Users}
+                title="No teams yet"
+                description="Create a team to start organizing issues and cycles."
+              />
             )}
 
             {activeWorkspaceId && (
@@ -127,7 +140,10 @@ function HomePage() {
             <h2 className="mb-4 text-sm font-medium">Projects</h2>
 
             {projects.isLoading ? (
-              <p className="text-muted-foreground mb-4 text-sm">Loading projects…</p>
+              <div className="mb-4 flex flex-col gap-2">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+              </div>
             ) : projects.data && projects.data.length > 0 ? (
               <ul className="mb-4 flex flex-col gap-2">
                 {projects.data.map((project) => (
@@ -147,7 +163,11 @@ function HomePage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground mb-4 text-sm">No projects yet.</p>
+              <EmptyState
+                icon={FolderKanban}
+                title="No projects yet"
+                description="Create a project to group related issues together."
+              />
             )}
 
             {activeWorkspaceId && (

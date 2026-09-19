@@ -1,5 +1,6 @@
 import type { Activity } from '@lynx/types'
 
+import { EmptyState } from '@/components/empty-state'
 import { PRIORITY_LABELS } from '@/features/issues/status-priority'
 import { STATUS_LABELS } from '@/features/issues/status-priority'
 
@@ -42,7 +43,7 @@ function describeActivity(activity: Activity): string {
 
 export function ActivityFeed({ activities }: { activities: Activity[] }) {
   if (activities.length === 0) {
-    return <p className="text-muted-foreground text-sm">No activity yet.</p>
+    return <EmptyState title="No activity yet." compact />
   }
 
   return (

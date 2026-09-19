@@ -5,6 +5,9 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { EmptyState } from '@/components/empty-state'
+import { Skeleton } from '@/components/skeleton'
+
 import type { ListIssuesParams } from './api'
 import { IssueRow } from './issue-row'
 import { KanbanBoard } from './kanban-board'
@@ -124,7 +127,11 @@ export function IssueBoard({
 
       {view === 'list' ? (
         infiniteIssues.isLoading ? (
-          <p className="text-muted-foreground text-sm">Loading issues…</p>
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 6 }, (_, i) => (
+              <Skeleton key={i} className="h-9 w-full" />
+            ))}
+          </div>
         ) : listRows.length > 0 ? (
           <div
             ref={parentRef}
@@ -146,7 +153,7 @@ export function IssueBoard({
                     {issue ? (
                       <IssueRow issue={issue} onClick={() => onSelectIssue(issue.id)} />
                     ) : (
-                      <p className="text-muted-foreground px-3 py-2 text-sm">Loading more…</p>
+                      <Skeleton className="h-9 w-full" />
                     )}
                   </div>
                 )
@@ -154,10 +161,22 @@ export function IssueBoard({
             </div>
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">No issues yet.</p>
+          <EmptyState
+            scene
+            title="No issues yet"
+            description="Create the first issue to get this team moving."
+          />
         )
       ) : kanbanIssues.isLoading ? (
-        <p className="text-muted-foreground text-sm">Loading issues…</p>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="flex w-64 shrink-0 flex-col gap-2">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ))}
+        </div>
       ) : (
         <>
           {kanbanIssues.data?.nextCursor && (
