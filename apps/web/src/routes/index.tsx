@@ -3,6 +3,8 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 
 import { useLogout } from '@/features/auth/use-logout'
+import { CreateProjectForm } from '@/features/projects/create-project-form'
+import { useProjects } from '@/features/projects/use-projects'
 import { CreateTeamForm } from '@/features/teams/create-team-form'
 import { useTeams } from '@/features/teams/use-teams'
 import { CreateWorkspaceForm } from '@/features/workspaces/create-workspace-form'
@@ -26,6 +28,7 @@ function HomePage() {
 
   const activeWorkspaceId = selectedWorkspaceId ?? workspaces.data?.[0]?.id
   const teams = useTeams(activeWorkspaceId)
+  const projects = useProjects(activeWorkspaceId)
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-6 py-16">
@@ -101,6 +104,35 @@ function HomePage() {
 
             {activeWorkspaceId && (
               <CreateTeamForm workspaceId={activeWorkspaceId} onSuccess={() => undefined} />
+            )}
+          </div>
+
+          <div className="border-border bg-surface rounded-xl border p-6">
+            <h2 className="mb-4 text-sm font-medium">Projects</h2>
+
+            {projects.isLoading ? (
+              <p className="text-muted-foreground mb-4 text-sm">Loading projects…</p>
+            ) : projects.data && projects.data.length > 0 ? (
+              <ul className="mb-4 flex flex-col gap-2">
+                {projects.data.map((project) => (
+                  <li
+                    key={project.id}
+                    className="border-border flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: project.color ?? '#94a3b8' }}
+                    />
+                    <span>{project.name}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground mb-4 text-sm">No projects yet.</p>
+            )}
+
+            {activeWorkspaceId && (
+              <CreateProjectForm workspaceId={activeWorkspaceId} onSuccess={() => undefined} />
             )}
           </div>
         </section>

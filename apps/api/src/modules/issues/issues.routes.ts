@@ -18,6 +18,7 @@ const listIssuesQuerySchema = z.object({
   teamId: z.string().uuid(),
   status: z.enum(ISSUE_STATUSES).optional(),
   assigneeId: z.string().uuid().optional(),
+  cycleId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })

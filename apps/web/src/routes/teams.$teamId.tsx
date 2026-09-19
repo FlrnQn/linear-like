@@ -1,13 +1,17 @@
+import { cn } from '@lynx/shared'
+import { ISSUE_STATUSES } from '@lynx/types'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 
+import { CreateCycleForm } from '@/features/cycles/create-cycle-form'
+import { useCycles } from '@/features/cycles/use-cycles'
 import { CreateIssueForm } from '@/features/issues/create-issue-form'
 import { IssueDetailDialog } from '@/features/issues/issue-detail-dialog'
 import { IssueRow } from '@/features/issues/issue-row'
-import { ISSUE_STATUSES, STATUS_LABELS } from '@/features/issues/status-priority'
+import { KanbanBoard } from '@/features/issues/kanban-board'
+import { STATUS_LABELS } from '@/features/issues/status-priority'
 import { useIssues } from '@/features/issues/use-issues'
 import { useTeam } from '@/features/teams/use-team'
-import { cn } from '@lynx/shared'
 
 export const Route = createFileRoute('/teams/$teamId')({
   beforeLoad: ({ context, location }) => {
@@ -19,17 +23,23 @@ export const Route = createFileRoute('/teams/$teamId')({
 })
 
 type StatusFilter = (typeof ISSUE_STATUSES)[number] | 'ALL'
+type ViewMode = 'list' | 'kanban'
 
 function TeamIssuesPage() {
   const { teamId } = Route.useParams()
   const team = useTeam(teamId)
+  const cycles = useCycles(teamId)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+  const [cycleFilter, setCycleFilter] = useState<string>('')
+  const [view, setView] = useState<ViewMode>('list')
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showCreateCycle, setShowCreateCycle] = useState(false)
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null)
 
   const issues = useIssues({
     teamId,
-    status: statusFilter === 'ALL' ? undefined : statusFilter,
+    status: view === 'list' && statusFilter !== 'ALL' ? statusFilter : undefined,
+    cycleId: cycleFilter || undefined,
   })
 
   if (!team.data) {
@@ -37,7 +47,7 @@ function TeamIssuesPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-16">
+    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-16">
       <header className="flex items-center justify-between">
         <div>
           <Link to="/" className="text-muted-foreground hover:text-foreground text-xs">
@@ -63,43 +73,121 @@ function TeamIssuesPage() {
         />
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => setStatusFilter('ALL')}
-          className={cn(
-            'text-sm',
-            statusFilter === 'ALL' ? 'text-foreground font-medium' : 'text-muted-foreground',
-          )}
-        >
-          All
-        </button>
-        {ISSUE_STATUSES.map((status) => (
+      <section className="border-border bg-surface rounded-xl border p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-medium">Cycles</h2>
           <button
-            key={status}
             type="button"
-            onClick={() => setStatusFilter(status)}
+            onClick={() => setShowCreateCycle((v) => !v)}
+            className="text-muted-foreground hover:text-foreground text-xs"
+          >
+            {showCreateCycle ? 'Cancel' : '+ New cycle'}
+          </button>
+        </div>
+        {showCreateCycle && (
+          <div className="mb-3">
+            <CreateCycleForm teamId={teamId} onSuccess={() => setShowCreateCycle(false)} />
+          </div>
+        )}
+        {cycles.data && cycles.data.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {cycles.data.map((cycle) => (
+              <span
+                key={cycle.id}
+                className="border-border rounded-full border px-2 py-0.5 text-xs"
+              >
+                {cycle.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-xs">No cycles yet.</p>
+        )}
+      </section>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="border-border flex gap-1 rounded-lg border p-0.5">
+          <button
+            type="button"
+            onClick={() => setView('list')}
             className={cn(
-              'text-sm',
-              statusFilter === status ? 'text-foreground font-medium' : 'text-muted-foreground',
+              'rounded-md px-3 py-1 text-sm',
+              view === 'list' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
             )}
           >
-            {STATUS_LABELS[status]}
+            List
           </button>
-        ))}
-      </div>
+          <button
+            type="button"
+            onClick={() => setView('kanban')}
+            className={cn(
+              'rounded-md px-3 py-1 text-sm',
+              view === 'kanban' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+            )}
+          >
+            Kanban
+          </button>
+        </div>
 
-      <div className="flex flex-col gap-2">
-        {issues.isLoading ? (
-          <p className="text-muted-foreground text-sm">Loading issues…</p>
-        ) : issues.data && issues.data.length > 0 ? (
-          issues.data.map((issue) => (
-            <IssueRow key={issue.id} issue={issue} onClick={() => setSelectedIssueId(issue.id)} />
-          ))
-        ) : (
-          <p className="text-muted-foreground text-sm">No issues yet.</p>
+        <select
+          value={cycleFilter}
+          onChange={(e) => setCycleFilter(e.target.value)}
+          className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
+        >
+          <option value="">All cycles</option>
+          {cycles.data?.map((cycle) => (
+            <option key={cycle.id} value={cycle.id}>
+              {cycle.name}
+            </option>
+          ))}
+        </select>
+
+        {view === 'list' && (
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ALL')}
+              className={cn(
+                'text-sm',
+                statusFilter === 'ALL' ? 'text-foreground font-medium' : 'text-muted-foreground',
+              )}
+            >
+              All
+            </button>
+            {ISSUE_STATUSES.map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setStatusFilter(status)}
+                className={cn(
+                  'text-sm',
+                  statusFilter === status ? 'text-foreground font-medium' : 'text-muted-foreground',
+                )}
+              >
+                {STATUS_LABELS[status]}
+              </button>
+            ))}
+          </div>
         )}
       </div>
+
+      {view === 'list' ? (
+        <div className="flex flex-col gap-2">
+          {issues.isLoading ? (
+            <p className="text-muted-foreground text-sm">Loading issues…</p>
+          ) : issues.data && issues.data.length > 0 ? (
+            issues.data.map((issue) => (
+              <IssueRow key={issue.id} issue={issue} onClick={() => setSelectedIssueId(issue.id)} />
+            ))
+          ) : (
+            <p className="text-muted-foreground text-sm">No issues yet.</p>
+          )}
+        </div>
+      ) : issues.isLoading ? (
+        <p className="text-muted-foreground text-sm">Loading issues…</p>
+      ) : (
+        <KanbanBoard issues={issues.data ?? []} onSelectIssue={setSelectedIssueId} />
+      )}
 
       {selectedIssueId && (
         <IssueDetailDialog

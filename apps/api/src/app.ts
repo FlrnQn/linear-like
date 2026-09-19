@@ -5,9 +5,11 @@ import { env } from './env'
 import { activitiesRoutes } from './modules/activities/activities.routes'
 import { authRoutes } from './modules/auth/auth.routes'
 import { commentsRoutes } from './modules/comments/comments.routes'
+import { cyclesRoutes } from './modules/cycles/cycles.routes'
 import { healthRoutes } from './modules/health/health.routes'
 import { issuesRoutes } from './modules/issues/issues.routes'
 import { labelsRoutes } from './modules/labels/labels.routes'
+import { projectsRoutes } from './modules/projects/projects.routes'
 import { teamsRoutes } from './modules/teams/teams.routes'
 import { usersRoutes } from './modules/users/users.routes'
 import { workspacesRoutes } from './modules/workspaces/workspaces.routes'
@@ -59,6 +61,8 @@ export async function buildApp() {
   await app.register(workspacesRoutes)
   await app.register(teamsRoutes)
   await app.register(labelsRoutes)
+  await app.register(projectsRoutes)
+  await app.register(cyclesRoutes)
   await app.register(issuesRoutes)
   await app.register(commentsRoutes)
   await app.register(activitiesRoutes)

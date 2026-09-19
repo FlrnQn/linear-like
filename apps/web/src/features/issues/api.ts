@@ -6,12 +6,14 @@ export interface ListIssuesParams {
   teamId: string
   status?: IssueStatus
   assigneeId?: string
+  cycleId?: string
 }
 
 export function listIssues(params: ListIssuesParams) {
   const search = new URLSearchParams({ teamId: params.teamId })
   if (params.status) search.set('status', params.status)
   if (params.assigneeId) search.set('assigneeId', params.assigneeId)
+  if (params.cycleId) search.set('cycleId', params.cycleId)
   return apiFetch<Issue[]>(`/issues?${search.toString()}`)
 }
 

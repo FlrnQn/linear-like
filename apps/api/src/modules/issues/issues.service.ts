@@ -2,7 +2,7 @@ import type { CreateIssueInput, UpdateIssueInput } from '@lynx/types'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import { db } from '../../db/client'
-import { activities, issueLabels, issues, teams } from '../../db/schema'
+import { activities, cycles, issueLabels, issues, projects, teams } from '../../db/schema'
 import { NotFoundError } from '../../lib/errors'
 import { toPublicIssue } from './issues.mapper'
 
@@ -11,7 +11,25 @@ const issueRelations = {
   assignee: true,
   creator: true,
   issueLabels: { with: { label: true } },
+  project: { columns: { id: true, name: true, color: true, icon: true } },
+  cycle: { columns: { id: true, name: true, number: true } },
 } as const
+
+async function assertProjectBelongsToWorkspace(projectId: string | undefined, workspaceId: string) {
+  if (!projectId) return
+  const project = await db.query.projects.findFirst({ where: eq(projects.id, projectId) })
+  if (!project || project.workspaceId !== workspaceId) {
+    throw new NotFoundError('Project not found in this workspace')
+  }
+}
+
+async function assertCycleBelongsToTeam(cycleId: string | undefined, teamId: string) {
+  if (!cycleId) return
+  const cycle = await db.query.cycles.findFirst({ where: eq(cycles.id, cycleId) })
+  if (!cycle || cycle.teamId !== teamId) {
+    throw new NotFoundError('Cycle not found for this team')
+  }
+}
 
 export async function getWorkspaceIdForIssue(issueId: string) {
   const row = await db.query.issues.findFirst({
@@ -31,11 +49,18 @@ export async function getIssueById(id: string) {
 
 export async function listIssuesForTeam(
   teamId: string,
-  filters: { status?: string; assigneeId?: string; limit: number; offset: number },
+  filters: {
+    status?: string
+    assigneeId?: string
+    cycleId?: string
+    limit: number
+    offset: number
+  },
 ) {
   const conditions = [eq(issues.teamId, teamId)]
   if (filters.status) conditions.push(eq(issues.status, filters.status as never))
   if (filters.assigneeId) conditions.push(eq(issues.assigneeId, filters.assigneeId))
+  if (filters.cycleId) conditions.push(eq(issues.cycleId, filters.cycleId))
 
   const rows = await db.query.issues.findMany({
     where: and(...conditions),
@@ -53,6 +78,9 @@ export async function createIssue(
   creatorId: string,
   input: CreateIssueInput,
 ) {
+  await assertProjectBelongsToWorkspace(input.projectId, team.workspaceId)
+  await assertCycleBelongsToTeam(input.cycleId, team.id)
+
   const issueId = await db.transaction(async (tx) => {
     const [updatedTeam] = await tx
       .update(teams)
@@ -70,6 +98,8 @@ export async function createIssue(
         description: input.description,
         priority: input.priority,
         assigneeId: input.assigneeId,
+        projectId: input.projectId,
+        cycleId: input.cycleId,
         creatorId,
         estimate: input.estimate,
         dueDate: input.dueDate,
@@ -108,6 +138,9 @@ export async function updateIssue(
   const existing = await db.query.issues.findFirst({ where: eq(issues.id, issueId) })
   if (!existing) throw new NotFoundError('Issue not found')
 
+  if (input.projectId) await assertProjectBelongsToWorkspace(input.projectId, workspaceId)
+  if (input.cycleId) await assertCycleBelongsToTeam(input.cycleId, existing.teamId)
+
   await db.transaction(async (tx) => {
     const updates: Partial<typeof issues.$inferInsert> = {}
     if (input.title !== undefined) updates.title = input.title
@@ -115,8 +148,11 @@ export async function updateIssue(
     if (input.status !== undefined) updates.status = input.status
     if (input.priority !== undefined) updates.priority = input.priority
     if (input.assigneeId !== undefined) updates.assigneeId = input.assigneeId
+    if (input.projectId !== undefined) updates.projectId = input.projectId
+    if (input.cycleId !== undefined) updates.cycleId = input.cycleId
     if (input.estimate !== undefined) updates.estimate = input.estimate
     if (input.dueDate !== undefined) updates.dueDate = input.dueDate
+    if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder
 
     if (Object.keys(updates).length > 0) {
       await tx.update(issues).set(updates).where(eq(issues.id, issueId))

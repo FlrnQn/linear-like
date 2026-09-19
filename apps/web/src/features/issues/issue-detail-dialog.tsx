@@ -6,6 +6,8 @@ import { useActivities } from '@/features/activities/use-activities'
 import { CommentForm } from '@/features/comments/comment-form'
 import { CommentList } from '@/features/comments/comment-list'
 import { useComments } from '@/features/comments/use-comments'
+import { useCycles } from '@/features/cycles/use-cycles'
+import { useProjects } from '@/features/projects/use-projects'
 import { useWorkspaceMembers } from '@/features/workspaces/use-workspace-members'
 
 import { PrioritySelect } from './priority-select'
@@ -27,7 +29,9 @@ export function IssueDetailDialog({
   const comments = useComments(issueId)
   const activities = useActivities(issueId)
   const members = useWorkspaceMembers(workspaceId)
-  const updateIssue = useUpdateIssue(issueId)
+  const projects = useProjects(workspaceId)
+  const cycles = useCycles(issue.data?.teamId)
+  const updateIssue = useUpdateIssue()
   const deleteIssue = useDeleteIssue()
 
   return (
@@ -57,32 +61,77 @@ export function IssueDetailDialog({
                 </p>
               )}
 
-              <div className="border-border mb-6 grid grid-cols-2 gap-3 rounded-lg border p-3 text-sm sm:grid-cols-4">
+              <div className="border-border mb-6 grid grid-cols-2 gap-3 rounded-lg border p-3 text-sm sm:grid-cols-3">
                 <div>
                   <p className="text-muted-foreground mb-1 text-xs">Status</p>
                   <StatusSelect
                     value={issue.data.status}
-                    onChange={(status) => updateIssue.mutate({ status })}
+                    onChange={(status) => updateIssue.mutate({ issueId, input: { status } })}
                   />
                 </div>
                 <div>
                   <p className="text-muted-foreground mb-1 text-xs">Priority</p>
                   <PrioritySelect
                     value={issue.data.priority}
-                    onChange={(priority) => updateIssue.mutate({ priority })}
+                    onChange={(priority) => updateIssue.mutate({ issueId, input: { priority } })}
                   />
                 </div>
                 <div>
                   <p className="text-muted-foreground mb-1 text-xs">Assignee</p>
                   <select
                     value={issue.data.assignee?.id ?? ''}
-                    onChange={(e) => updateIssue.mutate({ assigneeId: e.target.value || null })}
+                    onChange={(e) =>
+                      updateIssue.mutate({
+                        issueId,
+                        input: { assigneeId: e.target.value || null },
+                      })
+                    }
                     className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
                   >
                     <option value="">Unassigned</option>
                     {members.data?.map((member) => (
                       <option key={member.userId} value={member.userId}>
                         {member.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <p className="text-muted-foreground mb-1 text-xs">Project</p>
+                  <select
+                    value={issue.data.projectId ?? ''}
+                    onChange={(e) =>
+                      updateIssue.mutate({
+                        issueId,
+                        input: { projectId: e.target.value || null },
+                      })
+                    }
+                    className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
+                  >
+                    <option value="">No project</option>
+                    {projects.data?.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <p className="text-muted-foreground mb-1 text-xs">Cycle</p>
+                  <select
+                    value={issue.data.cycleId ?? ''}
+                    onChange={(e) =>
+                      updateIssue.mutate({
+                        issueId,
+                        input: { cycleId: e.target.value || null },
+                      })
+                    }
+                    className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
+                  >
+                    <option value="">No cycle</option>
+                    {cycles.data?.map((cycle) => (
+                      <option key={cycle.id} value={cycle.id}>
+                        {cycle.name}
                       </option>
                     ))}
                   </select>

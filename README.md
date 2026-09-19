@@ -2,20 +2,20 @@
 
 A Linear-inspired project management platform, built from scratch as a technical playground for modern full-stack TypeScript practices.
 
-> **Status: Phase 4 — Issues, Labels, Comments, Activity.** Full issue lifecycle (create/assign/prioritize/label/comment/delete) works end-to-end with server-enforced permissions and a real audit trail. Projects/cycles/Kanban and visual polish land in the phases that follow.
+> **Status: Phase 5 — Projects, Cycles, Kanban.** Issues can now belong to a project and a cycle, and a full drag-and-drop Kanban board sits alongside the list view. Command palette, animations, and visual polish land in the phases that follow.
 
 ## Stack
 
-| Layer      | Choices                                                                                                                |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Frontend   | React 19, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Form, Zustand, Radix UI, Lucide, Tailwind CSS v4 |
-| Backend    | Node.js, TypeScript, Fastify 5, PostgreSQL, Redis                                                                      |
-| Database   | Drizzle ORM (node-postgres driver), Drizzle Kit migrations, snake_case DB / camelCase JS via `casing: 'snake_case'`    |
-| Auth       | Argon2 password hashing, JWT access tokens (`@fastify/jwt`), rotating opaque refresh tokens in an httpOnly cookie      |
-| Validation | Zod schemas shared between web and api via `@lynx/types` (request bodies, forms, env parsing)                          |
-| Tooling    | pnpm workspaces, Turborepo, ESLint (flat config), Prettier, Docker Compose                                             |
+| Layer      | Choices                                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend   | React 19, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Form, Zustand, dnd-kit, Radix UI, Lucide, Tailwind CSS v4 |
+| Backend    | Node.js, TypeScript, Fastify 5, PostgreSQL, Redis                                                                               |
+| Database   | Drizzle ORM (node-postgres driver), Drizzle Kit migrations, snake_case DB / camelCase JS via `casing: 'snake_case'`             |
+| Auth       | Argon2 password hashing, JWT access tokens (`@fastify/jwt`), rotating opaque refresh tokens in an httpOnly cookie               |
+| Validation | Zod schemas shared between web and api via `@lynx/types` (request bodies, forms, env parsing)                                   |
+| Tooling    | pnpm workspaces, Turborepo, ESLint (flat config), Prettier, Docker Compose                                                      |
 
-Additional libraries called for in the full spec (TanStack Virtual, Motion, dnd-kit, shadcn/ui, Recharts, Three.js/R3F) are **not installed yet**. They're introduced in the phase where they're first actually used, so every dependency in `package.json` has a real caller.
+Additional libraries called for in the full spec (TanStack Virtual, Motion, shadcn/ui, Recharts, Three.js/R3F) are **not installed yet**. They're introduced in the phase where they're first actually used, so every dependency in `package.json` has a real caller.
 
 ## Architecture
 
@@ -26,8 +26,8 @@ lynx/
 │   │   └── src/
 │   │       ├── app/            # router/query-client setup, AppProviders (session bootstrap)
 │   │       ├── routes/         # TanStack Router file-based routes (/, /login, /signup, /teams/$teamId)
-│   │       ├── features/       # auth, workspaces, teams, issues, labels, comments, activities
-│   │       ├── components/     # (reserved) shared UI components — Phase 5+
+│   │       ├── features/       # auth, workspaces, teams, projects, cycles, issues, labels, comments, activities
+│   │       ├── components/     # (reserved) shared UI components
 │   │       ├── layouts/        # (reserved) page layouts (sidebar, shell…) — Phase 6
 │   │       ├── hooks/          # (reserved) cross-cutting hooks
 │   │       ├── lib/            # api-client (auth header + refresh-on-401), API base URL
@@ -36,7 +36,7 @@ lynx/
 │   │
 │   └── api/                    # Fastify backend
 │       └── src/
-│           ├── modules/        # health, auth, users, workspaces, teams, issues, labels, comments, activities
+│           ├── modules/        # health, auth, users, workspaces, teams, projects, cycles, issues, labels, comments, activities
 │           ├── plugins/        # Fastify plugins (cors, sensible, cookie, jwt)
 │           ├── middleware/     # requireWorkspaceRole (RBAC check)
 │           ├── lib/            # HttpError hierarchy shared by routes and services
@@ -62,7 +62,7 @@ lynx/
 
 - **`apps/api/app.ts` vs `server.ts`** — `buildApp()` returns a fully wired Fastify instance without calling `.listen()`, which is exactly what Fastify's `.inject()` testing API needs later (Phase 10) without booting a real socket.
 - **Env validation with Zod** — `apps/api/src/env.ts` parses `process.env` once at boot with sane defaults matching `docker-compose.yml`, so `pnpm dev` works out of the box even without a local `.env` file.
-- **`@lynx/types` shared across web/api** — every Zod schema (auth, workspaces, teams, issues, labels, comments) and enum (`ISSUE_STATUSES`, `ISSUE_PRIORITIES`, …) is defined once and consumed by both the API routes/Drizzle enums and the frontend forms/selects, so client and server can't drift.
+- **`@lynx/types` shared across web/api** — every Zod schema (auth, workspaces, teams, projects, cycles, issues, labels, comments) and enum (`ISSUE_STATUSES`, `ISSUE_PRIORITIES`, …) is defined once and consumed by both the API routes/Drizzle enums and the frontend forms/selects, so client and server can't drift.
 - **TanStack Router, not `react-router`** — file-based routes with full type-safety on params/search, and built-in code-splitting per route (`autoCodeSplitting: true` in `vite.config.ts`).
 - **Tailwind v4 CSS-first config** — no `tailwind.config.ts`; tokens live in `src/styles/globals.css` via `@theme`, with light/dark values swapped through a `.dark` class scope, ready for a real theme switcher later.
 
@@ -116,6 +116,14 @@ The seed is deterministic (`faker.seed(1234)`) and produces one workspace ("Lynx
 - **Optimistic UI, honestly scoped** — status/priority/title/description/estimate changes update the issue detail view instantly (with rollback on error) because they map 1:1 onto the `Issue` shape. Assignee and label changes wait for the server response instead, because rendering them optimistically would require resolving a bare `assigneeId`/`labelIds` into full user/label objects on the client — doable, but not worth the risk of a flickering wrong render for this phase. See `apps/web/src/features/issues/use-update-issue.ts`.
 - **The issue detail view is a Radix `Dialog`**, not a route — matches the "drawer over full page navigation" UX from the spec, and gets a real focus trap, `Escape`-to-close, and ARIA wiring for free instead of hand-rolling it.
 - **Permissions**: any workspace member (including `GUEST`) can view issues/comments/activity; creating, editing, or deleting an issue or label requires `OWNER`/`ADMIN`/`MEMBER`.
+
+## Projects, cycles & Kanban
+
+- **Cross-scope validation on write, not just read.** Assigning `projectId`/`cycleId` to an issue checks that the project belongs to the issue's workspace and the cycle belongs to the issue's team (`assertProjectBelongsToWorkspace` / `assertCycleBelongsToTeam` in `apps/api/src/modules/issues/issues.service.ts`) — otherwise nothing would stop an issue from silently linking to another team's cycle.
+- **Cycle numbering isn't race-hardened like issue numbering.** Unlike `teams.issueCount` (Phase 2/4), cycle numbers are computed with a plain `MAX(number)+1` inside a transaction, no dedicated counter column. This was a deliberate asymmetry from Phase 2: cycles are created rarely (a handful per team per quarter) versus issues (constantly), so the tiny theoretical race window wasn't worth a schema column.
+- **The Kanban board is `dnd-kit`, not a custom drag implementation** — `@dnd-kit/core` + `@dnd-kit/sortable` give per-column `SortableContext`s plus `useDroppable` on each column (so dropping into an _empty_ column still registers), and `closestCorners` collision detection for reliable cross-column drops.
+- **Drag-and-drop is genuinely optimistic across every open view**, not just the dragged card. `useUpdateIssue` (`apps/web/src/features/issues/use-update-issue.ts`) patches the single-issue cache _and_ every currently-cached `['issues', ...]` list query — so if the List view and Kanban view both have data cached, dragging a card in the Kanban updates the List's cache too, with automatic rollback on error.
+- **New issue position uses fractional ordering**: dropping a card computes `sortOrder` as the midpoint between its new neighbors (`(prev + next) / 2`), falling back to `± 1000` at either end of a column. Only the dragged issue is written — no bulk renumbering of the rest of the column.
 
 ## Prerequisites
 
@@ -179,7 +187,7 @@ pnpm db:studio      # browse the database in Drizzle Studio
 - [x] Phase 2 — Database schema, migrations, and seed (Drizzle)
 - [x] Phase 3 — Auth, workspaces, teams, users
 - [x] Phase 4 — Issues, statuses, priorities, labels, comments, activity
-- [ ] Phase 5 — Projects, cycles, Kanban (dnd-kit)
+- [x] Phase 5 — Projects, cycles, Kanban (dnd-kit)
 - [ ] Phase 6 — Command palette, keyboard shortcuts, search, animations
 - [ ] Phase 7 — Real-time (WebSocket), optimistic updates
 - [ ] Phase 8 — Analytics, performance, virtualization

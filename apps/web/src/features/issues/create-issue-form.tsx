@@ -3,7 +3,9 @@ import { createIssueSchema } from '@lynx/types'
 import { cn } from '@lynx/shared'
 import { useForm } from '@tanstack/react-form'
 
+import { useCycles } from '@/features/cycles/use-cycles'
 import { useLabels } from '@/features/labels/use-labels'
+import { useProjects } from '@/features/projects/use-projects'
 import { useWorkspaceMembers } from '@/features/workspaces/use-workspace-members'
 import { ApiError } from '@/lib/api-client'
 
@@ -22,6 +24,8 @@ export function CreateIssueForm({
   const createIssue = useCreateIssue()
   const members = useWorkspaceMembers(workspaceId)
   const labels = useLabels(workspaceId)
+  const projects = useProjects(workspaceId)
+  const cycles = useCycles(teamId)
 
   const form = useForm({
     defaultValues: {
@@ -29,6 +33,8 @@ export function CreateIssueForm({
       description: '',
       priority: 'NO_PRIORITY' as IssuePriority,
       assigneeId: '',
+      projectId: '',
+      cycleId: '',
       labelIds: [] as string[],
     },
     onSubmit: async ({ value }) => {
@@ -38,6 +44,8 @@ export function CreateIssueForm({
         description: value.description || undefined,
         priority: value.priority,
         assigneeId: value.assigneeId || undefined,
+        projectId: value.projectId || undefined,
+        cycleId: value.cycleId || undefined,
         labelIds: value.labelIds,
       })
       await createIssue.mutateAsync(input, { onSuccess })
@@ -93,6 +101,40 @@ export function CreateIssueForm({
               {members.data?.map((member) => (
                 <option key={member.userId} value={member.userId}>
                   {member.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </form.Field>
+
+        <form.Field name="projectId">
+          {(field) => (
+            <select
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
+            >
+              <option value="">No project</option>
+              {projects.data?.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </form.Field>
+
+        <form.Field name="cycleId">
+          {(field) => (
+            <select
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              className="border-border bg-background focus:border-accent rounded-md border px-2 py-1 text-sm outline-none"
+            >
+              <option value="">No cycle</option>
+              {cycles.data?.map((cycle) => (
+                <option key={cycle.id} value={cycle.id}>
+                  {cycle.name}
                 </option>
               ))}
             </select>

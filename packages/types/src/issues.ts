@@ -1,8 +1,10 @@
 import { z } from 'zod'
 
 import type { PublicUser } from './auth'
+import type { CycleSummary } from './cycles'
 import { ISSUE_PRIORITIES, ISSUE_STATUSES } from './enums'
 import type { Label } from './labels'
+import type { ProjectSummary } from './projects'
 
 export const createIssueSchema = z.object({
   teamId: z.string().uuid(),
@@ -10,6 +12,8 @@ export const createIssueSchema = z.object({
   description: z.string().trim().max(20_000).optional(),
   priority: z.enum(ISSUE_PRIORITIES).optional(),
   assigneeId: z.string().uuid().optional(),
+  projectId: z.string().uuid().optional(),
+  cycleId: z.string().uuid().optional(),
   estimate: z.number().int().min(0).max(100).optional(),
   dueDate: z.coerce.date().optional(),
   labelIds: z.array(z.string().uuid()).optional(),
@@ -22,9 +26,12 @@ export const updateIssueSchema = z.object({
   status: z.enum(ISSUE_STATUSES).optional(),
   priority: z.enum(ISSUE_PRIORITIES).optional(),
   assigneeId: z.string().uuid().nullable().optional(),
+  projectId: z.string().uuid().nullable().optional(),
+  cycleId: z.string().uuid().nullable().optional(),
   estimate: z.number().int().min(0).max(100).nullable().optional(),
   dueDate: z.coerce.date().nullable().optional(),
   labelIds: z.array(z.string().uuid()).optional(),
+  sortOrder: z.number().optional(),
 })
 export type UpdateIssueInput = z.infer<typeof updateIssueSchema>
 
@@ -45,6 +52,8 @@ export interface Issue {
   assignee: PublicUser | null
   creator: PublicUser
   labels: Label[]
+  project: ProjectSummary | null
+  cycle: CycleSummary | null
   createdAt: string
   updatedAt: string
 }

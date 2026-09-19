@@ -18,6 +18,19 @@ interface LabelRow {
   createdAt: Date
 }
 
+interface ProjectSummaryRow {
+  id: string
+  name: string
+  color: string | null
+  icon: string | null
+}
+
+interface CycleSummaryRow {
+  id: string
+  name: string
+  number: number
+}
+
 interface IssueRow {
   id: string
   teamId: string
@@ -37,6 +50,8 @@ interface IssueRow {
   assignee: UserRow | null
   creator: UserRow
   issueLabels: { label: LabelRow }[]
+  project: ProjectSummaryRow | null
+  cycle: CycleSummaryRow | null
 }
 
 export function toPublicIssue(row: IssueRow): Issue {
@@ -63,6 +78,15 @@ export function toPublicIssue(row: IssueRow): Issue {
       color: label.color,
       createdAt: label.createdAt.toISOString(),
     })),
+    project: row.project
+      ? {
+          id: row.project.id,
+          name: row.project.name,
+          color: row.project.color,
+          icon: row.project.icon,
+        }
+      : null,
+    cycle: row.cycle ? { id: row.cycle.id, name: row.cycle.name, number: row.cycle.number } : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }
